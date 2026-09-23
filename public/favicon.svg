@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2" />
+  <!-- Growth Trajectory Arc -->
+  <path d="M 12 50 C 22 47, 34 38, 52 14" stroke="#94A3B8" stroke-width="3" stroke-linecap="round" />
+  <circle cx="12" cy="50" r="2.5" fill="#64748B" />
+  <circle cx="52" cy="14" r="2.5" fill="#64748B" />
+  <!-- IND Text -->
+  <text x="32" y="39" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#1B3679" text-anchor="middle" letter-spacing="-0.5">IND</text>
+</svg>
