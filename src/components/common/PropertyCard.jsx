@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Heart, Scale, Eye, MapPin, Bed, Bath, 
-  Compass, ShieldCheck, Phone, CheckCircle 
+  Compass, Phone, CheckCircle 
 } from 'lucide-react';
 import { formatIndianPrice, formatIndianNumber } from '../../utils/currencyFormatter';
 import { useProperty } from '../../context/PropertyContext';
@@ -34,22 +34,6 @@ export default function PropertyCard({ property, layout = 'grid' }) {
             loading="lazy"
           />
         </Link>
-
-        {/* Badges */}
-        <div className="property-card-badges">
-          {property.featured && (
-            <span className="badge badge-featured">Featured</span>
-          )}
-          {property.isReraVerified && (
-            <span className="badge badge-rera" title={property.reraNumber}>
-              <ShieldCheck size={12} />
-              <span>RERA Verified</span>
-            </span>
-          )}
-          <span className={`badge ${isRent ? 'badge-status-rent' : 'badge-status'}`}>
-            {property.purpose === 'Buy' ? 'For Sale' : property.purpose === 'Rent' ? 'For Rent' : property.purpose}
-          </span>
-        </div>
 
         {/* Card Action Tools */}
         <div className="property-card-tools">

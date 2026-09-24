@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, useScroll, useMotionValueEvent, useReducedMotion } from 'framer-motion';
-import { 
-  Search, ShieldCheck, Car, KeyRound, CheckCircle2, 
-  ArrowRight, Sparkles, Building2 
+import {
+  Search, ShieldCheck, Car, KeyRound, CheckCircle2,
+  ArrowRight, Sparkles, Building2
 } from 'lucide-react';
-import ScrollReveal from '../common/ScrollReveal';
 import TextReveal from '../common/TextReveal';
 import MagneticButton from '../common/MagneticButton';
 import { Link } from 'react-router-dom';
@@ -18,7 +17,8 @@ const steps = [
     desc: "Filter residential apartments, luxury villas, builder floors, or commercial spaces across 500+ Indian cities. Every listing features verified RERA carpet area measurements — zero super built-up inflation.",
     icon: <Search size={22} />,
     color: "var(--accent)", // Bronze / Orange
-    tint: "rgba(181, 100, 43, 0.04)",
+    colorRaw: "#B5642B",
+    tint: "rgba(181, 100, 43, 0.07)",
     preview: {
       badge: "Step 1: Smart Filter Engine",
       stat1: "28 States + 8 UTs",
@@ -35,7 +35,8 @@ const steps = [
     desc: "Inspect sanctioned layout plans, builder escrow compliance, encumbrance certificates, and RERA delivery track records directly from state registries before paying any deposit.",
     icon: <ShieldCheck size={22} />,
     color: "var(--success)", // Forest Green
-    tint: "rgba(31, 95, 74, 0.04)",
+    colorRaw: "#1F5F4A",
+    tint: "rgba(31, 95, 74, 0.07)",
     preview: {
       badge: "Step 2: 70% Escrow Protection",
       stat1: "100% RERA Checked",
@@ -52,7 +53,8 @@ const steps = [
     desc: "Select your convenient weekend date and time slot. Our certified local property advisors escort you and your family to the site, providing objective inspection of sunlight, Vastu entries, and road connectivity.",
     icon: <Car size={22} />,
     color: "var(--primary)", // Deep Navy
-    tint: "rgba(15, 27, 61, 0.04)",
+    colorRaw: "#0F1B3D",
+    tint: "rgba(15, 27, 61, 0.06)",
     preview: {
       badge: "Step 3: Family-Friendly Inspection",
       stat1: "Free Site Escort",
@@ -69,7 +71,8 @@ const steps = [
     desc: "Complete your transaction directly with verified property owners or Grade-A builders with zero middleman commissions. Seamless home loan sanctioning with SBI, HDFC, and ICICI.",
     icon: <KeyRound size={22} />,
     color: "#7C3AED", // Purple as specified
-    tint: "rgba(124, 58, 237, 0.04)",
+    colorRaw: "#7C3AED",
+    tint: "rgba(124, 58, 237, 0.06)",
     preview: {
       badge: "Step 4: Direct Savings",
       stat1: "₹0 Brokerage",
@@ -104,11 +107,14 @@ export default function HowItWorksSticky() {
   });
 
   // Map scroll progress smoothly to active step index (0, 1, 2, 3)
+  // Each step occupies an equal portion of the total scroll distance
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
     if (!isDesktop || shouldReduceMotion) return;
-    
+
     // 4 steps evenly mapped across scroll progress
-    let newIndex = Math.floor(latest * steps.length);
+    // Add a small dead zone at start (0-5%) and end (95-100%) for smoother entry/exit
+    const adjustedProgress = Math.max(0, Math.min(1, (latest - 0.02) / 0.96));
+    let newIndex = Math.floor(adjustedProgress * steps.length);
     if (newIndex >= steps.length) newIndex = steps.length - 1;
     if (newIndex < 0) newIndex = 0;
 
@@ -139,9 +145,9 @@ export default function HowItWorksSticky() {
   const isPinnedMode = isDesktop && !shouldReduceMotion;
 
   return (
-    <section 
+    <section
       ref={containerRef}
-      style={{ 
+      style={{
         position: 'relative',
         background: '#FFFFFF',
         height: isPinnedMode ? '280vh' : 'auto'
@@ -152,18 +158,18 @@ export default function HowItWorksSticky() {
         style={
           isPinnedMode
             ? {
-                position: 'sticky',
-                top: 0,
-                height: '100vh',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                overflow: 'hidden',
-                padding: '20px 0'
-              }
+              position: 'sticky',
+              top: 0,
+              height: '100vh',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              padding: '20px 0'
+            }
             : {
-                padding: '80px 0'
-              }
+              padding: '80px 0'
+            }
         }
       >
         <div className="container" style={{ width: '100%' }}>
@@ -173,8 +179,8 @@ export default function HowItWorksSticky() {
               <Sparkles size={13} />
               Step-by-Step Experience
             </span>
-            <TextReveal 
-              text="How INDSTATE Transforms Indian Home Buying" 
+            <TextReveal
+              text="How INDSTATE Transforms Indian Home Buying"
               className="section-title"
               tag="h2"
             />
@@ -184,12 +190,12 @@ export default function HowItWorksSticky() {
           </div>
 
           {/* 2-Column Layout */}
-          <div 
-            style={{ 
-              display: 'grid', 
-              gridTemplateColumns: isPinnedMode ? '1.15fr 0.95fr' : '1fr', 
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isPinnedMode ? '1.15fr 0.95fr' : '1fr',
               gap: isPinnedMode ? '40px' : '32px',
-              alignItems: 'center' 
+              alignItems: 'center'
             }}
           >
             {/* Left Column: 4 Stacked Step Cards (All visible at all times) */}
@@ -202,44 +208,47 @@ export default function HowItWorksSticky() {
                   <div
                     key={step.id}
                     onClick={() => handleStepClick(idx)}
+                    className={isPinnedMode ? 'hiws-step-card' : ''}
                     style={{
                       padding: isPinnedMode ? '18px 22px' : '22px 24px',
                       borderRadius: 'var(--radius-lg)',
-                      background: isSingleActive ? (step.tint || '#FFFFFF') : 'var(--bg-page)',
-                      border: isSingleActive 
-                        ? `2px solid ${step.color}` 
-                        : (isPinnedMode ? '1px solid var(--border-color)' : `1.5px solid ${step.color}`),
-                      boxShadow: isSingleActive ? '0 12px 28px rgba(15, 27, 61, 0.08)' : 'none',
+                      background: isSingleActive ? step.tint : (isPinnedMode ? '#FFFFFF' : 'var(--bg-page)'),
+                      border: isSingleActive
+                        ? `2px solid ${step.color}`
+                        : (isPinnedMode ? '1.5px solid var(--border-color)' : `1.5px solid ${step.color}`),
+                      boxShadow: isSingleActive
+                        ? '0 8px 24px rgba(15, 27, 61, 0.10), 0 2px 6px rgba(15, 27, 61, 0.06)'
+                        : 'var(--shadow-xs)',
                       transform: isSingleActive ? 'translateY(-2px)' : 'translateY(0)',
                       cursor: isPinnedMode ? 'pointer' : 'default',
-                      transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, background-color 0.35s ease, box-shadow 0.35s ease',
+                      transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s ease, background-color 0.4s ease, box-shadow 0.4s ease',
                       position: 'relative'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                      <span 
+                      <span
                         style={{
                           fontFamily: 'var(--font-display)',
                           fontSize: '12px',
                           fontWeight: 800,
                           color: isActive ? step.color : 'var(--text-muted)',
-                          background: isActive ? '#FFFFFF' : 'transparent',
+                          background: isSingleActive ? '#FFFFFF' : 'transparent',
                           padding: '3px 9px',
                           borderRadius: 'var(--radius-full)',
-                          border: isSingleActive ? `1px solid ${step.color}` : '1px solid var(--border-color)',
-                          transition: 'all 0.35s ease'
+                          border: isSingleActive ? `1.5px solid ${step.color}` : '1px solid var(--border-color)',
+                          transition: 'all 0.4s ease'
                         }}
                       >
                         STEP {step.stepNum}
                       </span>
-                      <span 
-                        style={{ 
-                          fontSize: '12px', 
-                          fontWeight: isSingleActive ? 800 : 700, 
-                          textTransform: 'uppercase', 
-                          letterSpacing: '0.8px', 
+                      <span
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: isSingleActive ? 800 : 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.8px',
                           color: isPinnedMode ? (isSingleActive ? step.color : 'var(--text-muted)') : step.color,
-                          transition: 'color 0.35s ease'
+                          transition: 'color 0.4s ease, font-weight 0.2s ease'
                         }}
                       >
                         {step.tag}
@@ -264,16 +273,16 @@ export default function HowItWorksSticky() {
                 style={{
                   background: 'linear-gradient(145deg, #FFFFFF 0%, var(--bg-page) 100%)',
                   borderRadius: 'var(--radius-xl)',
-                  border: `1.5px solid ${current.color}`,
+                  border: `2px solid ${current.color}`,
                   padding: isPinnedMode ? '32px 36px' : '28px',
                   boxShadow: '0 18px 40px rgba(15, 27, 61, 0.08)',
                   position: 'relative',
                   overflow: 'hidden',
-                  transition: 'border-color 0.35s ease, box-shadow 0.35s ease'
+                  transition: 'border-color 0.4s ease, box-shadow 0.4s ease'
                 }}
               >
                 {/* Background Watermark Icon */}
-                <div 
+                <div
                   style={{
                     position: 'absolute',
                     top: '-15px',
@@ -281,7 +290,7 @@ export default function HowItWorksSticky() {
                     opacity: 0.05,
                     color: current.color,
                     pointerEvents: 'none',
-                    transition: 'color 0.35s ease'
+                    transition: 'color 0.4s ease'
                   }}
                 >
                   <Building2 size={240} />
@@ -297,7 +306,7 @@ export default function HowItWorksSticky() {
                     transition={{ duration: 0.3, ease: crevixEase }}
                   >
                     {/* Pill Tag */}
-                    <div 
+                    <div
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
@@ -322,7 +331,7 @@ export default function HowItWorksSticky() {
                     </h4>
 
                     {/* Stats Grid Box */}
-                    <div 
+                    <div
                       style={{
                         background: '#FFFFFF',
                         borderRadius: 'var(--radius-md)',

@@ -87,7 +87,9 @@
 }
 
 /* Base Styles */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -107,7 +109,12 @@ body {
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-display);
   color: var(--primary);
   font-weight: 600;
@@ -121,7 +128,10 @@ a {
   transition: var(--transition);
 }
 
-button, input, select, textarea {
+button,
+input,
+select,
+textarea {
   font-family: inherit;
   font-size: inherit;
 }
@@ -324,7 +334,8 @@ img {
   align-items: center;
 }
 
-.top-bar-left, .top-bar-right {
+.top-bar-left,
+.top-bar-right {
   display: flex;
   align-items: center;
   gap: 20px;
@@ -454,12 +465,14 @@ img {
   transition: transform 0.3s var(--ease-crevix);
 }
 
-.nav-link:hover::after, .nav-link.active::after {
+.nav-link:hover::after,
+.nav-link.active::after {
   transform: scaleX(1);
   transform-origin: bottom left;
 }
 
-.nav-link:hover, .nav-link.active {
+.nav-link:hover,
+.nav-link.active {
   color: var(--saffron);
 }
 
@@ -474,7 +487,7 @@ img {
   position: relative;
   min-height: 560px;
   background: linear-gradient(180deg, rgba(15, 27, 61, 0.72) 0%, rgba(15, 27, 61, 0.88) 100%),
-              url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1800&q=80') center/cover no-repeat;
+    url('https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1800&q=80') center/cover no-repeat;
   display: flex;
   align-items: center;
   padding: 60px 0 80px 0;
@@ -598,7 +611,8 @@ img {
   box-shadow: 0 0 0 3px rgba(181, 100, 43, 0.15);
 }
 
-.search-select, .search-input {
+.search-select,
+.search-input {
   width: 100%;
   border: none;
   background: transparent;
@@ -659,17 +673,30 @@ img {
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #000;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .property-card-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 0.45s ease-out;
+  will-change: transform;
 }
 
 .property-card:hover .property-card-img {
-  transform: scale(1.06);
+  transform: scale(1.08);
+}
+
+/* Disable image zoom for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .property-card-img {
+    transition: none;
+  }
+
+  .property-card:hover .property-card-img {
+    transform: none;
+  }
 }
 
 .property-card-badges {
@@ -679,7 +706,7 @@ img {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  z-index: 2;
+  z-index: 3;
 }
 
 .property-card-tools {
@@ -688,7 +715,7 @@ img {
   right: 14px;
   display: flex;
   gap: 6px;
-  z-index: 2;
+  z-index: 3;
 }
 
 .card-tool-btn {
@@ -903,10 +930,13 @@ img {
 
 /* Floating AI Chatbot Widget with Idle Pulse */
 @keyframes chatbotIdlePulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1) translateY(0);
     filter: drop-shadow(0 4px 12px rgba(15, 27, 61, 0.12));
   }
+
   50% {
     transform: scale(1.025) translateY(-2px);
     filter: drop-shadow(0 8px 18px rgba(56, 189, 248, 0.18)) drop-shadow(0 4px 12px rgba(15, 27, 61, 0.14));
@@ -918,10 +948,12 @@ img {
     transform: scale(0);
     opacity: 0;
   }
+
   60% {
     transform: scale(1.25);
     opacity: 1;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
@@ -1023,6 +1055,115 @@ img {
     right: 18px;
     bottom: 86px;
     max-width: calc(100vw - 36px);
+  }
+}
+
+/* ==========================================================================
+   Footer Wordmark Transition Section
+   Large outlined "INDSTATE" bridging white page → dark footer
+   ========================================================================== */
+
+.footer-wordmark-section {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  margin-bottom: 0;
+  z-index: 1;
+}
+
+/* Upper area: white background — shows the FULL wordmark with breathing room */
+.footer-wordmark-upper {
+  position: relative;
+  background: var(--bg-page, #F8FAFC);
+  padding: 60px 0 0;
+  overflow: visible;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* Lower area: dark footer-matching strip — wordmark bottom edge bleeds here */
+.footer-wordmark-lower {
+  position: relative;
+  background: var(--primary-dark, #091024);
+  height: 60px;
+  overflow: hidden;
+}
+
+/* Text wrapper in upper: static flow, centered, wordmark fully visible */
+.footer-wordmark-upper .footer-wordmark-text-wrap {
+  width: 100%;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  line-height: 0;
+  /* Let ~30% of the text bleed below into the dark strip */
+  margin-bottom: -0.28em;
+}
+
+/* Text wrapper in lower: re-renders the same text, clipped to dark area */
+.footer-wordmark-lower .footer-wordmark-text-wrap {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  text-align: center;
+  pointer-events: none;
+  user-select: none;
+  line-height: 0;
+}
+
+/* The actual wordmark text styling — Fraunces display font, stroke-only */
+.footer-wordmark-text {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(80px, 14vw, 220px);
+  line-height: 0.85;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  display: inline-block;
+
+  /* Outline/stroke-only effect — no fill, subtle navy-tinted stroke */
+  color: transparent;
+  -webkit-text-stroke: 2px rgba(15, 27, 61, 0.10);
+}
+
+/* In the dark lower half, the stroke becomes a subtle white so it's visible */
+.footer-wordmark-lower .footer-wordmark-text {
+  -webkit-text-stroke: 2px rgba(255, 255, 255, 0.07);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .footer-wordmark-upper {
+    padding: 40px 0 0;
+  }
+
+  .footer-wordmark-lower {
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-wordmark-upper {
+    padding: 28px 0 0;
+  }
+
+  .footer-wordmark-lower {
+    height: 28px;
+  }
+
+  .footer-wordmark-text {
+    letter-spacing: 0.02em;
+  }
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .footer-wordmark-text {
+    transition: none;
   }
 }
 
@@ -1368,6 +1509,26 @@ img {
   border-radius: var(--radius-sm);
   border: 1.5px solid;
   background: rgba(255, 255, 255, 0.9);
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Logo image variant — renders when an approved logo file is available */
+.marquee-item-icon--logo {
+  padding: 4px 6px;
+}
+
+.marquee-logo-img {
+  display: block;
+  max-height: 28px;
+  max-width: 64px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .marquee-item-info {
@@ -1404,13 +1565,25 @@ img {
 
 /* Keyframes */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes modalPopIn {
@@ -1418,6 +1591,7 @@ img {
     opacity: 0;
     transform: scale(0.95) translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -1429,6 +1603,7 @@ img {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1440,6 +1615,7 @@ img {
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1450,6 +1626,7 @@ img {
   from {
     transform: translateX(0);
   }
+
   to {
     transform: translateX(-50%);
   }
@@ -1474,12 +1651,16 @@ a:hover .icon-nudge,
 
 /* Accessibility: Reduced Motion Support */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
   .marquee-track {
     animation: none !important;
   }
@@ -1490,6 +1671,7 @@ a:hover .icon-nudge,
   .hero-search-fields {
     grid-template-columns: 1fr 1fr;
   }
+
   .nav-menu {
     display: none;
   }
@@ -1500,20 +1682,25 @@ a:hover .icon-nudge,
     --transition: all 0.22s var(--ease-crevix);
     --transition-smooth: all 0.38s var(--ease-crevix);
   }
+
   .hero-title {
     font-size: 32px;
   }
+
   .hero-search-fields {
     grid-template-columns: 1fr;
   }
+
   .chat-window {
     width: calc(100vw - 32px);
     right: 16px;
     bottom: 90px;
   }
+
   .top-bar {
     display: none;
   }
+
   .property-card:hover {
     transform: none;
   }
@@ -1525,6 +1712,7 @@ a:hover .icon-nudge,
    native cursor and touch gestures on mobile, tablet, and touch screens.
    ========================================================================== */
 @media (hover: hover) and (pointer: fine) {
+
   body.has-custom-cursor,
   body.has-custom-cursor a,
   body.has-custom-cursor button,

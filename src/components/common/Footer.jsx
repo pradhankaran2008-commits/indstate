@@ -144,7 +144,7 @@ const directoryItemVariants = {
 
 export default function Footer() {
   return (
-    <footer data-cursor-section="footer" style={{ background: 'var(--primary-dark)', color: '#94A3B8', paddingTop: '70px', borderTop: '4px solid var(--accent)' }}>
+    <footer data-cursor-section="footer" style={{ background: 'var(--primary-dark)', color: '#94A3B8', paddingTop: '70px' }}>
       <div className="container">
         {/* 1. TOP FEATURE HIGHLIGHTS BAR (TRUST BADGES) */}
         <motion.div 

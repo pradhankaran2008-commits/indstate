@@ -8,6 +8,7 @@ import { ChatbotProvider } from './context/ChatbotContext';
 import TopBar from './components/common/TopBar';
 import Navbar from './components/common/Navbar';
 import Footer from './components/common/Footer';
+import FooterWordmarkTransition from './components/common/FooterWordmarkTransition';
 import CompareFloatingBar from './components/common/CompareFloatingBar';
 import QuickPreviewModal from './components/common/QuickPreviewModal';
 import AuthModal from './components/common/AuthModal';
@@ -92,7 +93,8 @@ export default function App() {
               {/* Main Routing View with Smooth Transition */}
               <AnimatedRoutes />
 
-              {/* Footer */}
+              {/* Footer Wordmark Transition + Footer */}
+              <FooterWordmarkTransition />
               <Footer />
 
               {/* Global Interactive Overlays */}
