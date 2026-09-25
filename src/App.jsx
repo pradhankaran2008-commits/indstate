@@ -14,6 +14,7 @@ import QuickPreviewModal from './components/common/QuickPreviewModal';
 import AuthModal from './components/common/AuthModal';
 import FloatingChatbot from './components/chatbot/FloatingChatbot';
 import CustomCursor from './components/common/CustomCursor';
+import IntroAnimation from './components/common/IntroAnimation';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -79,13 +80,28 @@ function AnimatedRoutes() {
 }
 
 export default function App() {
+  const [showIntro, setShowIntro] = React.useState(true);
+  const [isReadyForContent, setIsReadyForContent] = React.useState(false);
+
   return (
     <BrowserRouter>
+      {/* 3-Second Brand Intro Animation */}
+      {showIntro && (
+        <IntroAnimation 
+          onExitStart={() => setIsReadyForContent(true)}
+          onComplete={() => {
+            setIsReadyForContent(true);
+            setShowIntro(false);
+          }} 
+        />
+      )}
+
       <ScrollToTop />
       <PropertyProvider>
         <AuthProvider>
           <ChatbotProvider>
-            <div className="app-shell" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+            {isReadyForContent && (
+              <div className="app-shell" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
               {/* Header Navigation */}
               <TopBar />
               <Navbar />
@@ -104,6 +120,7 @@ export default function App() {
               <FloatingChatbot />
               <CustomCursor />
             </div>
+            )}
           </ChatbotProvider>
         </AuthProvider>
       </PropertyProvider>

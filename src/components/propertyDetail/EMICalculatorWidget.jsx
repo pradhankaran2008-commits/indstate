@@ -4,16 +4,16 @@ import { calculateEMI, INDIAN_BANK_RATES } from '../../utils/emiCalculator';
 import { formatIndianPrice, formatIndianNumber, formatFullINR } from '../../utils/currencyFormatter';
 
 export default function EMICalculatorWidget({ property }) {
+  const [downPaymentPercent, setDownPaymentPercent] = useState(20); // 20% down payment
+  const [interestRate, setInterestRate] = useState(8.50);
+  const [tenureYears, setTenureYears] = useState(20);
+
   if (!property || property.purpose === 'Rent' || property.purpose === 'PG-Co-living') {
     return null; // EMI calculator applies for purchase properties
   }
 
-  const initialPrice = property.price || 10000000;
-  const [downPaymentPercent, setDownPaymentPercent] = useState(20); // 20% down payment
+  const initialPrice = property?.price || 10000000;
   const loanAmount = Math.round(initialPrice * (1 - downPaymentPercent / 100));
-  
-  const [interestRate, setInterestRate] = useState(8.50);
-  const [tenureYears, setTenureYears] = useState(20);
 
   const emiResult = calculateEMI(loanAmount, interestRate, tenureYears);
 
