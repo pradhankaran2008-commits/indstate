@@ -1,73 +1,236 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { 
-  Building2, Home, Castle, 
-  Briefcase, Compass, Users, Sparkles 
-} from 'lucide-react';
+import { Building2, ChevronLeft, ChevronRight } from 'lucide-react';
 import ScrollReveal from '../common/ScrollReveal';
 
+export function PropertyCard({ type, innerRef }) {
+  return (
+    <div
+      ref={innerRef}
+      style={{
+        width: '380px',
+        height: '295px',
+        borderRadius: '24px',
+        position: 'relative',
+        overflow: 'hidden',
+        background: '#0F172A',
+        flexShrink: 0,
+        boxShadow: '0 10px 28px rgba(15, 23, 42, 0.12), 0 2px 8px rgba(15, 23, 42, 0.05)',
+        border: '1.5px solid rgba(255, 255, 255, 0.20)',
+        transformStyle: 'preserve-3d',
+        willChange: 'transform',
+        userSelect: 'none',
+        transition: 'border-color 0.25s ease, box-shadow 0.25s ease',
+      }}
+    >
+      <Link
+        to={type.url}
+        style={{
+          display: 'block',
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          textDecoration: 'none',
+        }}
+      >
+        {/* Full-bleed property image */}
+        <img
+          src={type.image}
+          alt={type.name}
+          loading="lazy"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            objectPosition: 'center',
+            display: 'block',
+          }}
+        />
+
+        {/* Subtle bottom gradient overlay for category label readability */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '36px 20px 20px',
+            background: 'linear-gradient(to top, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.35) 55%, transparent 100%)',
+            pointerEvents: 'none',
+            display: 'flex',
+            alignItems: 'flex-end',
+          }}
+        >
+          <span
+            style={{
+              color: '#FFFFFF',
+              fontFamily: 'Outfit, sans-serif',
+              fontSize: '17px',
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
+              lineHeight: 1.3,
+              textShadow: '0 1px 3px rgba(0, 0, 0, 0.4)',
+            }}
+          >
+            {type.name}
+          </span>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
 export default function PropertyTypes() {
-  const [hoveredIdx, setHoveredIdx] = useState(null);
-  const crevixEase = [0.16, 1, 0.3, 1];
+  const containerRef = useRef(null);
+  const trackRef = useRef(null);
+  const cardsRef = useRef([]);
+  const containerWidthRef = useRef(1200);
+  const scrollPosRef = useRef(0);
+  const isPausedRef = useRef(false);
+  const animFrameRef = useRef(null);
 
   const types = [
     {
+      id: "apartments",
       name: "Apartments & Flats",
-      icon: <Building2 size={32} />,
-      count: "8,400+ Units",
       url: "/properties?type=Apartment",
-      desc: "Gated communities with clubhouses & pools"
+      image: "/categories/apartments.jpg"
     },
     {
+      id: "villas",
       name: "Luxury Independent Villas",
-      icon: <Castle size={32} />,
-      count: "1,250+ Homes",
       url: "/properties?type=Independent+Villa",
-      desc: "Private gardens, high privacy & duplex layouts"
+      image: "/categories/villas.jpg"
     },
     {
+      id: "penthouses",
       name: "Sky Penthouses",
-      icon: <Sparkles size={32} />,
-      count: "420+ Suites",
       url: "/properties?type=Penthouse",
-      desc: "Top floor panoramic vistas & private decks"
+      image: "/categories/penthouses.jpg"
     },
     {
+      id: "builder-floors",
       name: "Builder Floors",
-      icon: <Home size={32} />,
-      count: "3,100+ Floors",
       url: "/properties?type=Builder+Floor",
-      desc: "Exclusive single-floor living in Delhi NCR & Punjab"
+      image: "/categories/builder_floors.jpg"
     },
     {
+      id: "commercial",
       name: "Commercial Offices",
-      icon: <Briefcase size={32} />,
-      count: "1,890+ Spaces",
       url: "/properties?type=Commercial+Office",
-      desc: "Grade-A IT parks, retail shops & corporate towers"
+      image: "/categories/commercial.jpg"
     },
     {
+      id: "farm-plots",
       name: "Residential & Farm Plots",
-      icon: <Compass size={32} />,
-      count: "2,400+ Plots",
       url: "/properties?type=Residential+Plot",
-      desc: "RERA approved plotted layouts & NA land"
+      image: "/categories/farm_plots.jpg"
     },
     {
+      id: "pg-coliving",
       name: "PG & Co-Living Suites",
-      icon: <Users size={32} />,
-      count: "950+ Spaces",
       url: "/properties?type=PG+/+Shared+Living",
-      desc: "Fully serviced AC rooms for students & techies"
+      image: "/categories/pg_coliving.jpg"
     }
   ];
 
+  const CARD_WIDTH = 380;
+  const CARD_GAP = 28;
+  const PADDING_LEFT = 60;
+  const SINGLE_SET_WIDTH = types.length * (CARD_WIDTH + CARD_GAP);
+
+  const carouselItems = [
+    ...types.map(t => ({ ...t, setKey: 's1' })),
+    ...types.map(t => ({ ...t, setKey: 's2' })),
+    ...types.map(t => ({ ...t, setKey: 's3' })),
+    ...types.map(t => ({ ...t, setKey: 's4' }))
+  ];
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (containerRef.current) {
+        containerWidthRef.current = containerRef.current.clientWidth;
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    let lastTime = performance.now();
+    const SPEED_PPS = 55;
+
+    const updateMarquee = (currentTime) => {
+      const dt = (currentTime - lastTime) / 1000;
+      lastTime = currentTime;
+
+      // Only advance position if cursor is not hovering on the carousel
+      if (!isPausedRef.current) {
+        if (dt > 0 && dt < 0.1) {
+          scrollPosRef.current += SPEED_PPS * dt;
+          if (scrollPosRef.current >= SINGLE_SET_WIDTH) {
+            scrollPosRef.current -= SINGLE_SET_WIDTH;
+          }
+        }
+      }
+
+      // 1. Move track
+      if (trackRef.current) {
+        trackRef.current.style.transform = `translate3d(-${scrollPosRef.current}px, 0, 0)`;
+      }
+
+      // 2. Subtle 3D tilt curve calculation (based on math, no layout reflows)
+      const containerW = containerWidthRef.current || 1200;
+      const screenCenter = containerW / 2;
+
+      cardsRef.current.forEach((cardEl, idx) => {
+        if (!cardEl) return;
+        const cardCenterScreen = PADDING_LEFT + idx * (CARD_WIDTH + CARD_GAP) + CARD_WIDTH / 2 - scrollPosRef.current;
+
+        // Skip cards outside the visible screen buffer
+        if (cardCenterScreen < -CARD_WIDTH || cardCenterScreen > containerW + CARD_WIDTH) {
+          return;
+        }
+
+        const u = (cardCenterScreen - screenCenter) / (containerW * 0.55);
+        const clampedU = Math.max(-1.3, Math.min(1.3, u));
+
+        // Subtle tilt angle: -9.5deg to +9.5deg
+        const rotY = -clampedU * 9.5;
+        // Subtle scale: 0.95 to 1.0
+        const scale = 1.0 - Math.abs(clampedU) * 0.045;
+        const zIndex = Math.round(100 - Math.abs(clampedU) * 30);
+
+        cardEl.style.transform = `perspective(1200px) rotateY(${rotY.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+        cardEl.style.zIndex = zIndex;
+      });
+
+      animFrameRef.current = requestAnimationFrame(updateMarquee);
+    };
+
+    animFrameRef.current = requestAnimationFrame(updateMarquee);
+
+    return () => {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+      }
+    };
+  }, [SINGLE_SET_WIDTH]);
+
+  const handleManualScroll = (direction) => {
+    const delta = (CARD_WIDTH + CARD_GAP) * direction;
+    let newPos = scrollPosRef.current + delta;
+    if (newPos < 0) newPos += SINGLE_SET_WIDTH;
+    if (newPos >= SINGLE_SET_WIDTH) newPos -= SINGLE_SET_WIDTH;
+    scrollPosRef.current = newPos;
+  };
+
   return (
-    <section style={{ padding: '80px 0', background: 'var(--bg-page)' }}>
-      <div className="container">
+    <section style={{ padding: '80px 0 110px', background: 'var(--bg-page)', overflow: 'hidden' }}>
+      <div className="container" style={{ position: 'relative' }}>
         <ScrollReveal y={24} duration={0.65}>
-          <div className="section-header">
+          <div className="section-header" style={{ marginBottom: '36px' }}>
             <span className="section-tag">
               <Building2 size={13} />
               Categories
@@ -79,72 +242,103 @@ export default function PropertyTypes() {
           </div>
         </ScrollReveal>
 
-        <div 
+        <div style={{
+          position: 'absolute',
+          right: '20px',
+          top: '20px',
+          display: 'flex',
+          gap: '10px',
+          zIndex: 10
+        }}>
+          <button
+            onClick={() => handleManualScroll(-1)}
+            aria-label="Previous Category"
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: '1px solid rgba(15, 23, 42, 0.1)',
+              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.06)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--primary)',
+              transition: 'background 0.2s ease, color 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--saffron)';
+              e.currentTarget.style.color = '#FFFFFF';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#FFFFFF';
+              e.currentTarget.style.color = 'var(--primary)';
+            }}
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            onClick={() => handleManualScroll(1)}
+            aria-label="Next Category"
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              background: '#FFFFFF',
+              border: '1px solid rgba(15, 23, 42, 0.1)',
+              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.06)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--primary)',
+              transition: 'background 0.2s ease, color 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--saffron)';
+              e.currentTarget.style.color = '#FFFFFF';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#FFFFFF';
+              e.currentTarget.style.color = 'var(--primary)';
+            }}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+      </div>
+
+      <div 
+        ref={containerRef}
+        onMouseEnter={() => { isPausedRef.current = true; }}
+        onMouseLeave={() => { isPausedRef.current = false; }}
+        style={{
+          width: '100%',
+          overflow: 'hidden',
+          perspective: '1400px',
+          perspectiveOrigin: 'center center',
+          padding: '24px 0 44px',
+        }}
+      >
+        <div
+          ref={trackRef}
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
-            gap: '20px'
+            display: 'flex',
+            gap: `${CARD_GAP}px`,
+            width: 'max-content',
+            paddingLeft: `${PADDING_LEFT}px`,
+            transformStyle: 'preserve-3d',
+            willChange: 'transform',
           }}
         >
-          {types.map((t, idx) => {
-            const isHovered = hoveredIdx === idx;
-            return (
-              <motion.div
-                key={t.name}
-                initial={{ opacity: 0, y: 22 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-40px' }}
-                transition={{ duration: 0.55, ease: crevixEase, delay: idx * 0.06 }}
-              >
-                <Link
-                  to={t.url}
-                  onMouseEnter={() => setHoveredIdx(idx)}
-                  onMouseLeave={() => setHoveredIdx(null)}
-                  style={{
-                    background: '#FFFFFF',
-                    borderRadius: 'var(--radius-lg)',
-                    padding: '28px 24px',
-                    border: isHovered ? '1px solid var(--saffron)' : '1px solid var(--border-color)',
-                    boxShadow: isHovered ? '0 12px 28px rgba(15, 23, 42, 0.08)' : 'var(--shadow-xs)',
-                    transform: isHovered ? 'translateY(-4px) scale(1.02)' : 'translateY(0) scale(1)',
-                    transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    height: '100%'
-                  }}
-                >
-                  <div 
-                    style={{
-                      width: '58px',
-                      height: '58px',
-                      borderRadius: 'var(--radius-md)',
-                      background: isHovered ? 'var(--saffron-light)' : 'var(--primary-alpha)',
-                      color: isHovered ? 'var(--saffron)' : 'var(--primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginBottom: '18px',
-                      transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-                      transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
-                    }}
-                  >
-                    {t.icon}
-                  </div>
-
-                  <h4 style={{ fontSize: '18px', color: 'var(--primary)', marginBottom: '6px' }}>
-                    {t.name}
-                  </h4>
-                  <span style={{ fontSize: '13px', color: 'var(--saffron)', fontWeight: 700, marginBottom: '8px' }}>
-                    {t.count}
-                  </span>
-                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                    {t.desc}
-                  </p>
-                </Link>
-              </motion.div>
-            );
-          })}
+          {carouselItems.map((t, idx) => (
+            <PropertyCard
+              key={`${t.setKey}-${t.id}`}
+              type={t}
+              innerRef={(el) => (cardsRef.current[idx] = el)}
+            />
+          ))}
         </div>
       </div>
     </section>

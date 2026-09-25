@@ -53,8 +53,7 @@ export default function BlogPreview() {
                     overflow: 'hidden',
                     border: isHovered ? '1px solid var(--saffron)' : '1px solid var(--border-color)',
                     boxShadow: isHovered ? '0 14px 32px rgba(15, 23, 42, 0.1)' : 'var(--shadow-xs)',
-                    transform: isHovered ? 'translateY(-5px) scale(1.018)' : 'translateY(0) scale(1)',
-                    transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease',
+                    transition: 'box-shadow 180ms ease, border-color 180ms ease',
                     display: 'flex',
                     flexDirection: 'column',
                     height: '100%'

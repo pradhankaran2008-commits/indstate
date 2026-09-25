@@ -105,8 +105,7 @@ export default function WhyIndstate() {
                     border: isHovered ? '1px solid var(--saffron)' : '1px solid var(--border-color)',
                     background: 'var(--bg-page)',
                     boxShadow: isHovered ? '0 12px 28px rgba(15, 23, 42, 0.08)' : 'none',
-                    transform: isHovered ? 'translateY(-4px) scale(1.015)' : 'translateY(0) scale(1)',
-                    transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease',
+                    transition: 'box-shadow 180ms ease, border-color 180ms ease',
                     height: '100%'
                   }}
                 >

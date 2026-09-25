@@ -4,103 +4,121 @@ import { ShieldCheck, CheckCircle2 } from 'lucide-react';
 const partners = [
   {
     name: 'State Bank of India',
-    type: 'Banking Partner',
+    type: 'Premier Banking Partner',
+    category: 'bank',
     icon: 'SBI',
-    color: '#1B5E20',
-    logoSrc: '/logos/sbi.svg',       // Place approved SBI logo here (SVG or PNG with transparency)
+    color: '#002D72',
+    logoSrc: '/logos/sbi.svg',
   },
   {
     name: 'HDFC Bank',
-    type: 'Home Loans',
+    type: 'Preferred Home Loans',
+    category: 'bank',
     icon: 'HDFC',
     color: '#004C8F',
     logoSrc: '/logos/hdfc.svg',
   },
   {
     name: 'ICICI Bank',
-    type: 'Instant Pre-approval',
+    type: 'Instant Digital Pre-Approval',
+    category: 'bank',
     icon: 'ICICI',
-    color: '#B71C1C',
-    logoSrc: '/logos/icici.svg',
+    color: '#9B1B20',
+    logoSrc: '/logos/icici.png',
   },
   {
     name: 'Axis Bank',
-    type: 'Financial Partner',
+    type: 'National Financial Partner',
+    category: 'bank',
     icon: 'AXIS',
-    color: '#880E4F',
+    color: '#97144D',
     logoSrc: '/logos/axis.svg',
   },
   {
+    name: 'PNB Limited',
+    type: 'PSU Home Loan Facilitator',
+    category: 'bank',
+    icon: 'PNB',
+    color: '#A21D22',
+    logoSrc: '/logos/pnb.svg',
+  },
+  {
+    name: 'Kotak Mahindra',
+    type: 'Fast Track Disbursement',
+    category: 'bank',
+    icon: 'KOTAK',
+    color: '#ED1C24',
+    logoSrc: '/logos/kotak.svg',
+  },
+  {
     name: 'Godrej Properties',
-    type: 'Grade-A Developer',
+    type: 'Nationwide Grade-A Developer',
+    category: 'developer',
     icon: 'GODREJ',
-    color: '#2E7D32',
+    color: '#00897B',
     logoSrc: '/logos/godrej.svg',
   },
   {
     name: 'DLF Limited',
-    type: 'Premier Developer',
+    type: 'Premier Luxury Landmarks',
+    category: 'developer',
     icon: 'DLF',
     color: '#0D47A1',
     logoSrc: '/logos/dlf.svg',
   },
   {
     name: 'Prestige Group',
-    type: 'South India Leader',
+    type: 'South India Residential Leader',
+    category: 'developer',
     icon: 'PRESTIGE',
-    color: '#E65100',
+    color: '#C59B27',
     logoSrc: '/logos/prestige.svg',
   },
   {
     name: 'Lodha Group',
-    type: 'Luxury Residences',
+    type: 'World-Class Residences',
+    category: 'developer',
     icon: 'LODHA',
-    color: '#4A148C',
+    color: '#B45309',
     logoSrc: '/logos/lodha.svg',
   },
   {
     name: 'Tata Housing',
-    type: 'Trust & Excellence',
+    type: 'Trust & Engineering Excellence',
+    category: 'developer',
     icon: 'TATA',
-    color: '#00695C',
+    color: '#00539F',
     logoSrc: '/logos/tata.svg',
   },
   {
     name: 'Sobha Developers',
-    type: 'Craftsmanship',
+    type: 'German Quality Craftsmanship',
+    category: 'developer',
     icon: 'SOBHA',
-    color: '#BF360C',
+    color: '#832729',
     logoSrc: '/logos/sobha.svg',
   },
   {
-    name: 'Kotak Mahindra',
-    type: 'Fast Disbursement',
-    icon: 'KOTAK',
-    color: '#C2185B',
-    logoSrc: '/logos/kotak.svg',
+    name: 'K Raheja',
+    type: 'Bespoke Commercial & Living',
+    category: 'developer',
+    icon: 'RAHEJA',
+    color: '#C41230',
+    logoSrc: '/logos/raheja.svg',
   },
   {
     name: 'Brigade Group',
-    type: 'Urban Landmarks',
+    type: 'Urban Integrated Townships',
+    category: 'developer',
     icon: 'BRIGADE',
     color: '#1565C0',
     logoSrc: '/logos/brigade.svg',
   },
 ];
 
-/**
- * PartnerLogo — renders the brand's official logo image if available,
- * falling back gracefully to the existing text-abbreviation badge.
- *
- * Usage:
- *   1. Obtain an approved, transparent-background logo file (SVG preferred, PNG ok).
- *   2. Name it to match the `logoSrc` path (e.g. `sbi.svg`) and place in `public/logos/`.
- *   3. The logo will appear automatically on next build/reload — no code changes needed.
- */
 function PartnerLogo({ partner }) {
   const [imgFailed, setImgFailed] = useState(false);
 
-  // If no logoSrc defined or image failed to load → text fallback
   if (!partner.logoSrc || imgFailed) {
     return (
       <div
@@ -115,7 +133,7 @@ function PartnerLogo({ partner }) {
   return (
     <div
       className="marquee-item-icon marquee-item-icon--logo"
-      style={{ borderColor: partner.color }}
+      style={{ borderColor: 'transparent', background: '#FFFFFF' }}
     >
       <img
         src={partner.logoSrc}
@@ -151,6 +169,7 @@ function PartnerCard({ partner, keyPrefix, index, ariaHidden }) {
 export default function LogoMarquee() {
   return (
     <div className="logo-marquee-section">
+      {/* 1. Header */}
       <div className="container">
         <div className="logo-marquee-header">
           <div className="logo-marquee-badge">
@@ -163,9 +182,9 @@ export default function LogoMarquee() {
         </div>
       </div>
 
+      {/* 2. Continuous Horizontal Marquee */}
       <div className="marquee-wrapper" aria-label="Partner Banks and Developers">
         <div className="marquee-track">
-          {/* First set */}
           {partners.map((partner, index) => (
             <PartnerCard
               key={`partner-1-${index}`}
@@ -175,7 +194,6 @@ export default function LogoMarquee() {
             />
           ))}
 
-          {/* Duplicate set for seamless infinite scroll */}
           {partners.map((partner, index) => (
             <PartnerCard
               key={`partner-2-${index}`}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60">
+  <g transform="translate(12, 12)">
+    <!-- Inverted Triangle / Monogram -->
+    <path d="M18 0 L36 36 L0 36 Z" fill="#97144D"/>
+    <path d="M18 12 L28 32 L8 32 Z" fill="#FFFFFF"/>
+    <path d="M18 20 L24 32 L12 32 Z" fill="#97144D"/>
+  </g>
+  <text x="58" y="29" font-family="'Inter', sans-serif" font-size="18" font-weight="900" fill="#97144D" letter-spacing="0.5">AXIS BANK</text>
+  <text x="58" y="43" font-family="'Inter', sans-serif" font-size="8.5" font-weight="700" fill="#4A154B" letter-spacing="1.2">Badhti Ka Naam Zindagi</text>
+</svg>

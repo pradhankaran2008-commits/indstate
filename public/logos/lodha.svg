@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60">
+  <g transform="translate(12, 10)">
+    <!-- Lodha Crown/Tower -->
+    <rect x="0" y="0" width="38" height="38" rx="8" fill="#1C1917"/>
+    <path d="M11 27 L11 16 L19 10 L27 16 L27 27 Z" fill="none" stroke="#D4AF37" stroke-width="2.5"/>
+    <line x1="19" y1="10" x2="19" y2="27" stroke="#D4AF37" stroke-width="2"/>
+  </g>
+  <text x="58" y="29" font-family="'Cinzel', 'Trajan Pro', serif" font-size="19" font-weight="900" fill="#1C1917" letter-spacing="2">LODHA</text>
+  <text x="58" y="43" font-family="'Inter', sans-serif" font-size="8" font-weight="700" fill="#B45309" letter-spacing="1.2">BUILDING A BETTER LIFE</text>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60">
+  <g transform="translate(12, 10)">
+    <!-- Prestige Falcon Crest -->
+    <circle cx="20" cy="20" r="19" fill="#1A365D"/>
+    <path d="M20 7 L26 15 L20 23 L14 15 Z" fill="#C59B27"/>
+    <path d="M11 17 C 15 26, 25 26, 29 17" fill="none" stroke="#C59B27" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="20" cy="29" r="2" fill="#C59B27"/>
+  </g>
+  <text x="58" y="28" font-family="'Playfair Display', serif" font-size="18" font-weight="800" fill="#1A365D" letter-spacing="0.8">Prestige</text>
+  <text x="58" y="42" font-family="'Inter', sans-serif" font-size="8.5" font-weight="800" fill="#C59B27" letter-spacing="2">GROUP</text>
+</svg>

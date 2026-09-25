@@ -174,32 +174,30 @@ export default function CustomCursor() {
       const target = e.target;
       if (!target) return;
 
+      let newType = 'default';
+
       // 1. Text Inputs & Form Fields
       if (target.closest('input, textarea, select, [contenteditable="true"]')) {
-        setHoverType('input');
-        return;
+        newType = 'input';
+      }
+      // 2. Chatbot Widget
+      else if (target.closest('.chatbot-floating-btn, .chatbot-orb-wrap, [data-cursor="chat"]')) {
+        newType = 'chatbot';
+      }
+      // 3. Clickable Buttons, Links, and Interactive Controls
+      else if (target.closest('.card-tool-btn, [role="button"], .btn')) {
+        newType = 'button';
+      }
+      // 4. Property Cards & Thumbnails
+      else if (target.closest('.property-card, .property-card-thumb-wrap, [data-cursor="view"]')) {
+        newType = 'card';
+      }
+      // 5. Generic Links/Buttons
+      else if (target.closest('a, button, .clickable')) {
+        newType = 'button';
       }
 
-      // 2. Chatbot Widget - Hide custom cursor overlay so the glossy avatar is the sole visual element
-      if (target.closest('.chatbot-floating-btn, .chatbot-orb-wrap, [data-cursor="chat"]')) {
-        setHoverType('chatbot');
-        return;
-      }
-
-      // 3. Property Cards & Thumbnails
-      if (target.closest('.property-card, .property-card-thumb-wrap, [data-cursor="view"]')) {
-        setHoverType('card');
-        return;
-      }
-
-      // 4. Clickable Buttons, Links, and Interactive Controls
-      if (target.closest('a, button, [role="button"], .btn, .card-tool-btn, .clickable')) {
-        setHoverType('button');
-        return;
-      }
-
-      // 5. Default
-      setHoverType('default');
+      setHoverType((prev) => (prev !== newType ? newType : prev));
     };
 
     document.addEventListener('mouseover', handleMouseOver, { passive: true });

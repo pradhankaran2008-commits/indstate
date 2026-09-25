@@ -54,66 +54,48 @@ export default function Testimonials() {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [isPaused, setIsPaused] = useState(false);
+  const crevixEase = [0.16, 1, 0.3, 1];
 
-  // Auto-advance every 5.5s (pauses on mouse hover)
+  // Auto-advance automatically every 5 seconds without requiring any user action
   useEffect(() => {
-    if (isPaused) return;
-
     const timer = setInterval(() => {
       setDirection(1);
-      setCurrentIndex(prev => (prev + 1) % reviews.length);
-    }, 5500);
+      setCurrentIndex((prev) => (prev + 1) % reviews.length);
+    }, 5000);
 
     return () => clearInterval(timer);
-  }, [isPaused, reviews.length]);
+  }, [reviews.length]);
 
   const handleNext = () => {
     setDirection(1);
-    setCurrentIndex(prev => (prev + 1) % reviews.length);
+    setCurrentIndex((prev) => (prev + 1) % reviews.length);
   };
 
   const handlePrev = () => {
     setDirection(-1);
-    setCurrentIndex(prev => (prev - 1 + reviews.length) % reviews.length);
+    setCurrentIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
   };
 
-  const handleDragEnd = (e, { offset, velocity }) => {
-    const swipeConfidenceThreshold = 10000;
-    const swipePower = Math.abs(offset.x) * velocity.x;
-
-    if (swipePower < -swipeConfidenceThreshold || offset.x < -40) {
-      handleNext();
-    } else if (swipePower > swipeConfidenceThreshold || offset.x > 40) {
-      handlePrev();
-    }
-  };
-
-  const crevixEase = [0.16, 1, 0.3, 1];
-
+  // Smooth horizontal slide transition (850ms, zero jitter, zero scaling)
   const variants = {
     enter: (dir) => ({
-      x: dir > 0 ? 50 : -50,
-      opacity: 0,
-      scale: 0.98
+      x: dir > 0 ? 60 : -60,
+      opacity: 0
     }),
     center: {
       x: 0,
       opacity: 1,
-      scale: 1,
       transition: {
-        x: { duration: 0.5, ease: crevixEase },
-        opacity: { duration: 0.4 },
-        scale: { duration: 0.4 }
+        x: { duration: 0.85, ease: crevixEase },
+        opacity: { duration: 0.6, ease: 'easeOut' }
       }
     },
     exit: (dir) => ({
-      x: dir < 0 ? 50 : -50,
+      x: dir < 0 ? 60 : -60,
       opacity: 0,
-      scale: 0.98,
       transition: {
-        x: { duration: 0.4, ease: crevixEase },
-        opacity: { duration: 0.3 }
+        x: { duration: 0.85, ease: crevixEase },
+        opacity: { duration: 0.5, ease: 'easeIn' }
       }
     })
   };
@@ -121,11 +103,7 @@ export default function Testimonials() {
   const currentReview = reviews[currentIndex];
 
   return (
-    <section 
-      style={{ padding: '80px 0', background: '#FFFFFF', overflow: 'hidden' }}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
+    <section style={{ padding: '80px 0', background: '#FFFFFF', overflow: 'hidden' }}>
       <div className="container">
         <ScrollReveal y={24} duration={0.65}>
           <div className="section-header">
@@ -142,8 +120,8 @@ export default function Testimonials() {
 
         {/* Carousel Container */}
         <div style={{ maxWidth: '840px', margin: '0 auto', position: 'relative' }}>
-          {/* Main Slide Card */}
-          <div style={{ position: 'relative', minHeight: '280px', display: 'flex', alignItems: 'center' }}>
+          {/* Main Slide Card Container with Stable Height */}
+          <div style={{ position: 'relative', minHeight: '300px', display: 'flex', alignItems: 'center' }}>
             <AnimatePresence initial={false} custom={direction} mode="wait">
               <motion.div
                 key={currentIndex}
@@ -152,10 +130,6 @@ export default function Testimonials() {
                 initial="enter"
                 animate="center"
                 exit="exit"
-                drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0.2}
-                onDragEnd={handleDragEnd}
                 style={{
                   width: '100%',
                   background: 'var(--bg-page)',
@@ -163,7 +137,7 @@ export default function Testimonials() {
                   borderRadius: 'var(--radius-xl)',
                   border: '1px solid var(--border-color)',
                   boxShadow: '0 12px 30px rgba(15, 23, 42, 0.06)',
-                  cursor: 'grab'
+                  position: 'relative'
                 }}
               >
                 {/* Top Rating & Quote Icon */}
@@ -226,7 +200,7 @@ export default function Testimonials() {
                   key={rev.id}
                   type="button"
                   onClick={() => {
-                    setDirection(idx > currentIndex ? 1 : -1);
+                    setDirection(idx >= currentIndex ? 1 : -1);
                     setCurrentIndex(idx);
                   }}
                   style={{
@@ -237,7 +211,7 @@ export default function Testimonials() {
                     border: 'none',
                     padding: 0,
                     cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                    transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
                   }}
                   aria-label={`Go to slide ${idx + 1}`}
                 />
@@ -261,15 +235,15 @@ export default function Testimonials() {
                   justifyContent: 'center',
                   boxShadow: 'var(--shadow-xs)',
                   cursor: 'pointer',
-                  transition: 'all 0.25s var(--ease-crevix)'
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.borderColor = 'var(--saffron)';
-                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(181, 100, 43, 0.2)';
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-xs)';
                 }}
                 aria-label="Previous testimonial"
               >
@@ -291,15 +265,15 @@ export default function Testimonials() {
                   justifyContent: 'center',
                   boxShadow: 'var(--shadow-xs)',
                   cursor: 'pointer',
-                  transition: 'all 0.25s var(--ease-crevix)'
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease'
                 }}
                 onMouseEnter={e => {
                   e.currentTarget.style.borderColor = 'var(--saffron)';
-                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(181, 100, 43, 0.2)';
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.borderColor = 'var(--border-color)';
-                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-xs)';
                 }}
                 aria-label="Next testimonial"
               >

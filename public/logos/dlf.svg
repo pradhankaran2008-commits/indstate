@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60" width="220" height="60">
+  <g transform="translate(12, 11)">
+    <!-- DLF Stepped Pyramid -->
+    <polygon points="19,2 7,36 31,36" fill="#0D47A1"/>
+    <polygon points="19,8 11,32 27,32" fill="#FFFFFF"/>
+    <polygon points="19,14 14,29 24,29" fill="#0D47A1"/>
+  </g>
+  <text x="56" y="30" font-family="'Inter', sans-serif" font-size="22" font-weight="900" fill="#0D47A1" letter-spacing="1.5">DLF</text>
+  <text x="56" y="43" font-family="'Inter', sans-serif" font-size="8.5" font-weight="700" fill="#546E7A" letter-spacing="1.2">BUILDING INDIA</text>
+</svg>
