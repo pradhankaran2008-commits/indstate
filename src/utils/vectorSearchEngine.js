@@ -173,9 +173,16 @@ const KNOWN_CITIES = [
 ];
 
 /**
- * Extracts entities (city, BHK, price, issue history) from conversation history
+ * Extracts entities (city, BHK, price, issue history, milestones, user profile) from conversation history
  */
 export function extractEntitiesFromHistory(conversationHistory = [], currentQuery = '') {
+  const allUserTexts = conversationHistory
+    .filter(m => m.sender === 'user')
+    .map(m => m.text || '');
+  const allBotTexts = conversationHistory
+    .filter(m => m.sender === 'bot')
+    .map(m => m.text || '');
+
   const combinedText = [
     ...conversationHistory.map(m => m.text || ''),
     currentQuery
@@ -185,7 +192,18 @@ export function extractEntitiesFromHistory(conversationHistory = [], currentQuer
     city: null,
     bhk: null,
     problemContext: null,
-    hasPriorBotSuggestion: false
+    hasPriorBotSuggestion: false,
+    lastBotCategory: null,
+    milestones: {
+      birthday: false,
+      birthdayAcknowledgedRecently: false,
+      anniversary: false,
+      anniversaryAcknowledgedRecently: false,
+      newJob: false,
+      newJobAcknowledgedRecently: false,
+      relocation: false,
+      userName: null
+    }
   };
 
   // 1. Detect City
@@ -214,6 +232,50 @@ export function extractEntitiesFromHistory(conversationHistory = [], currentQuer
   if (recentBotMessages.length > 0) {
     entities.hasPriorBotSuggestion = true;
     entities.lastBotCategory = recentBotMessages[recentBotMessages.length - 1].category;
+  }
+
+  // 4. Milestone tracking across user message history
+  const pastUserText = allUserTexts.join(' ').toLowerCase();
+  const pastBotText = allBotTexts.join(' ').toLowerCase();
+  const fullUserText = (pastUserText + ' ' + currentQuery).toLowerCase();
+
+  // Birthday
+  if (/\b(birthday|b'day|bday|janamdin)\b/i.test(fullUserText)) {
+    entities.milestones.birthday = true;
+    if (/\b(once again|phir se|again)\b/i.test(pastBotText) && /\b(birthday|bday|janamdin|shubhkaamnayein)\b/i.test(pastBotText)) {
+      entities.milestones.birthdayFollowedUp = true;
+    }
+  }
+
+  // Anniversary
+  if (/\b(anniversary|saalgirah)\b/i.test(fullUserText)) {
+    entities.milestones.anniversary = true;
+    if (/\b(once again|phir se|again)\b/i.test(pastBotText) && /\b(anniversary|saalgirah|badhaiyan)\b/i.test(pastBotText)) {
+      entities.milestones.anniversaryFollowedUp = true;
+    }
+  }
+
+  // New Job / Promotion
+  if (/\b(new job|nayi job|placement|naukri|promotion)\b/i.test(fullUserText)) {
+    entities.milestones.newJob = true;
+    if (/\b(once again|phir se|again)\b/i.test(pastBotText) && /\b(new job|nayi job|promotion|role)\b/i.test(pastBotText)) {
+      entities.milestones.newJobFollowedUp = true;
+    }
+  }
+
+  // Relocation
+  if (/\b(shifting|relocating|moving to|shift ho raha|shift hona)\b/i.test(fullUserText)) {
+    entities.milestones.relocation = true;
+  }
+
+  // User Name
+  const nameMatch = fullUserText.match(/\b(?:my name is|mera naam|i am|call me)\s+([a-z]+)/i);
+  if (nameMatch && nameMatch[1]) {
+    const rawName = nameMatch[1].toLowerCase();
+    const commonWords = ['looking', 'searching', 'here', 'interested', 'fine', 'good', 'happy', 'tired', 'just', 'not', 'wanting'];
+    if (!commonWords.includes(rawName)) {
+      entities.milestones.userName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+    }
   }
 
   return entities;
@@ -360,6 +422,7 @@ function handleMultiPartQuery(userMessage, knowledgeBase, isHinglish, entities) 
 
 /**
  * Transforms a raw knowledge base answer into a warm, friend-like senior advisor voice
+ * Integrates remembered user name, city context, and personal milestones
  */
 function formatWarmFriendAnswer(rawAnswer, match, query, entities, isHinglish) {
   // Conversational openings (friendly, warm, acknowledging)
@@ -381,6 +444,11 @@ function formatWarmFriendAnswer(rawAnswer, match, query, entities, isHinglish) {
     ? hinglishOpenings[Math.floor(Math.random() * hinglishOpenings.length)]
     : englishOpenings[Math.floor(Math.random() * englishOpenings.length)];
 
+  // Inject remembered user name if known
+  const nameSalutation = entities?.milestones?.userName 
+    ? (isHinglish ? `${entities.milestones.userName} ji, ` : `${entities.milestones.userName}, `)
+    : "";
+
   // Inject remembered city if relevant and not already mentioned in raw answer
   let contextSnippet = "";
   if (entities.city && !rawAnswer.toLowerCase().includes(entities.city.toLowerCase())) {
@@ -391,64 +459,649 @@ function formatWarmFriendAnswer(rawAnswer, match, query, entities, isHinglish) {
     }
   }
 
+  // Inject casual milestone memory if present & not acknowledged recently
+  let milestoneSnippet = "";
+  if (entities?.milestones?.birthday && !entities?.milestones?.birthdayFollowedUp) {
+    milestoneSnippet = isHinglish 
+      ? `*(Aur haan, aapko Janamdin ki bohot saari shubhkaamnayein once again! 🎂)*\n\n`
+      : `*(And wishing you a wonderful birthday once again! 🎉)*\n\n`;
+  } else if (entities?.milestones?.newJob && !entities?.milestones?.newJobFollowedUp) {
+    milestoneSnippet = isHinglish
+      ? `*(Aur aapko nayi job/role ke liye badhaiyan once again! 💼)*\n\n`
+      : `*(And congratulations on the new role once again! 💼)*\n\n`;
+  }
+
   // Friendly conversational closing
   const closing = isHinglish
     ? `\n\nAgar kisi specific project ya situation me aur detail chahiye, toh batayein — main yahin hoon!`
     : `\n\nIf you need me to check a specific project or need further clarification, just ask — I'm right here to help!`;
 
-  return `${opening}${contextSnippet}${rawAnswer}${closing}`;
+  return `${nameSalutation}${opening}${milestoneSnippet}${contextSnippet}${rawAnswer}${closing}`;
 }
 
 /**
- * Detects small-talk / greetings / gratitude / farewells
+ * Detects if the current user message is announcing a personal milestone
+ * e.g. Birthday, Anniversary, New Job, Relocation
  */
-function handleSmallTalk(cleanMsg, isHinglish, lang) {
-  // Greetings
-  if (
-    /^(hi|hello|hey|heya|namaste|namaskar|salaam|kem cho|kya haal|good morning|good afternoon|good evening|pranam)\b/i.test(cleanMsg)
-  ) {
+function handlePersonalMilestones(cleanMsg, isHinglish, lang, entities) {
+  // 1. Birthday Announcement
+  if (/\b(birthday|b'day|bday|janamdin)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "Arey waah, Janamdin ki dher saari shubhkaamnayein! 🎂🎉 May this year bring you great health, happiness, and maybe even your dream home! Aaj celebrations chal rahi hain ya property browse karne ka mood hai?"
+      : "Wishing you a very Happy Birthday! 🎂🎉 May this year bring you immense happiness and hopefully the keys to your dream home! Are you celebrating today or exploring properties?";
     return {
-      text: isHinglish
-        ? "Namaste! 🙏 Main aapka INDSTATE AI Property Assistant hoon. Main RERA verification, home loans, rent agreements, ya Bharat ke top shahron me verified properties dhoondhne me aapki madad kar sakta hoon. Aaj main aapki kya seva karoon?"
-        : "Namaste & Hello! 🙏 I am your INDSTATE AI Property Assistant. I can help you verify RERA registration, calculate home loans, review rent agreements, or discover 100% verified properties across India. What can I help you with today?",
+      text,
       type: 'small_talk',
+      category: 'General Conversation',
       language: lang,
       quickReplies: isHinglish
-        ? ["Buy Property", "Rent Property", "RERA verified flats", "Home Loan help"]
-        : ["Buy Property", "Rent Property", "Check RERA", "Home Loan EMI"]
+        ? ["Thank you! Ghar dekhna hai", "Celebration chal rahi hai", "Mumbai me flats", "Home Loan EMI"]
+        : ["Thanks! Looking for homes", "Just celebrating today", "Explore Properties", "Calculate EMI"]
     };
   }
 
-  // Gratitude / Compliments
-  if (
-    /^(thank you|thanks|thx|dhanyawad|shukriya|bahut badiya|awesome|great|superb|good job|helpful|bahut accha)\b/i.test(cleanMsg) ||
-    cleanMsg === 'thanks' || cleanMsg === 'thank you' || cleanMsg === 'dhanyawad'
-  ) {
+  // 2. Anniversary Announcement
+  if (/\b(anniversary|saalgirah|wedding anniversary)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "Aapko anniversary ki bohot bohot badhaiyan! 💐✨ Khushiyan hamesha bani rahein. Aaj ke khaas din par real estate ya kisi property ke regarding koi help chahiye?"
+      : "Wishing you a very Happy Anniversary! 💐✨ May you celebrate many more joyful years together. Let me know if there's any property search or question I can help with today!";
     return {
-      text: isHinglish
-        ? "Aapka bahut swagat hai! 🙏 Mujhe khushi hui ki main aapki madad kar saka. Agar koi aur sawal ho ya aapko verified site visit schedule karni ho, toh zaroor batayein!"
-        : "You're most welcome! 🙏 Delighted I could assist you. If you need anything else or want to schedule a verified site inspection, feel free to ask!",
+      text,
       type: 'small_talk',
+      category: 'General Conversation',
       language: lang,
       quickReplies: isHinglish
-        ? ["Properties dikhao", "RERA Status check", "Agent se baat karo"]
-        : ["Browse Properties", "Check RERA Status", "Talk to Agent"]
+        ? ["Thank you!", "Family ke liye 3BHK flat", "Villa options", "Loan eligibility"]
+        : ["Thank you!", "3 BHK Family Flats", "Explore Villas", "Loan Eligibility"]
     };
   }
 
-  // Farewells
-  if (
-    /^(bye|goodbye|alvida|see you|tata|phir milte hain)\b/i.test(cleanMsg)
-  ) {
+  // 3. New Job / Promotion
+  if (/\b(new job|nayi job|placement|naukri lag|got a job|promotion)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "Badhai ho nayi job / promotion ke liye! 💼🎉 Nayi shuruat ke liye dher saari shubhkaamnayein. Agar nayi office ke paas rental flat ya apna ghar dhundh rahe hain, toh zaroor bataiye!"
+      : "Congratulations on the new job / promotion! 💼🎉 That's fantastic news. If you're looking for a rental flat or apartment close to your new workplace, I'm here to help!";
     return {
-      text: isHinglish
-        ? "Alvida aur aapka din shubh ho! Jab bhi aapko verified property ya real estate guidance ki zaroorat ho, INDSTATE hamesha aapke saath hai. 🙏"
-        : "Goodbye and have a wonderful day! Whenever you are ready to explore verified homes or need property advice, INDSTATE is always here for you. 🙏",
+      text,
       type: 'small_talk',
+      category: 'General Conversation',
       language: lang,
       quickReplies: isHinglish
-        ? ["Main fir aaunga", "Properties save kar lo"]
-        : ["Browse Properties", "Talk to Agent"]
+        ? ["Office ke paas rent", "Commute check karein", "Properties dikhao"]
+        : ["Rent near office", "Check commute", "Explore Listings"]
+    };
+  }
+
+  // 4. Shifting / Relocation
+  if (
+    /\b(shifting|relocating|moving to|shift ho raha|shift hona hai|transfer)\b/i.test(cleanMsg) &&
+    !cleanMsg.includes('bhk') && !cleanMsg.includes('price') && !cleanMsg.includes('flat')
+  ) {
+    const text = isHinglish
+      ? "Naye shehar shift hona ek exciting journey hoti hai! 🚚 Agar safe localities, commute time, rental agreements ya verified flats dhoondhne mein help chahiye, toh bas poochiye."
+      : "Relocating to a new city is such an exciting milestone! 🚚 If you need help finding verified rental homes, checking commute times, or understanding local rental agreements, I'm right here.";
+    return {
+      text,
+      type: 'small_talk',
+      category: 'General Conversation',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Localities recommend karo", "Rental flats dikhao", "Rent agreement rules"]
+        : ["Best localities", "Rental Apartments", "Rental Agreement Norms"]
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Detects casual small talk, greetings, how-are-you, gratitude, goodbyes, banter, and light casual remarks
+ */
+function handleCasualSmallTalk(cleanMsg, isHinglish, lang, entities) {
+  // 1. "How are you" / "Kaise ho" / Well-being check
+  if (
+    /\b(kaise ho|how are you|how r u|kya haal|kya haal hai|aap kaise hain|kaisa hai|kaisi ho|sab kaisa chal|sab theek|sab badiya|sab badhiya|wassup|what'?s up|sup|how are things|how is it going)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Main bilkul theek hoon, shukriya poochne ke liye! Aap bataiye, ghar dhund rahe hain ya kuch aur madad chahiye?"
+      : "I'm doing well, thank you for asking! How about you — are you looking for a home or need help with something else today?";
+    return {
+      text,
+      type: 'small_talk',
+      category: 'Small Talk',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Ghar dhundh raha hoon", "RERA verified flats", "Loan EMI kitni hogi?", "Bas aise hi check kar raha tha"]
+        : ["Looking for a home", "Explore RERA flats", "Calculate Loan EMI", "Just browsing around"]
+    };
+  }
+
+  // 2. Greetings ("hi", "hello", "namaste", "hey", etc.)
+  if (
+    /^(hi|hello|hey|heya|namaste|namaskar|salaam|kem cho|good morning|good afternoon|good evening|pranam|suno|yo)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Namaste! 🙏 Main aapka INDSTATE AI Property Assistant hoon. Bharat ke kisi bhi shehar mein verified properties, home loans, ya RERA rules ke baare mein poochna ho toh bataiye — main aapki kya madad karoon?"
+      : "Namaste & Hello! 🙏 I am your INDSTATE AI Property Assistant. Whether you're searching for verified homes across India, calculating loan EMIs, or checking RERA rules, I'm here to help. What can I assist you with today?";
+    return {
+      text,
+      type: 'small_talk',
+      category: 'Small Talk',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Buy Property", "Rent Property", "Home loan EMI", "RERA verified flats"]
+        : ["Buy Property", "Rent Property", "Calculate EMI", "Check RERA"]
+    };
+  }
+
+  // 3. Thank-you / Appreciation messages
+  // CRITICAL REQUIREMENT: Respond briefly and warmly ("Khushi hui help karke!"), don't force another sales pitch into every single reply
+  if (
+    /^(thank you|thanks|thx|dhanyawad|shukriya|bahut shukriya|thank you so much|thanks a lot|great help|awesome|you are great|good job|superb|helpful|bahut accha|bohot badhiya|bahut badhiya)\b/i.test(cleanMsg) ||
+    cleanMsg === 'thanks' || cleanMsg === 'thank you' || cleanMsg === 'dhanyawad' || cleanMsg === 'shukriya'
+  ) {
+    const text = isHinglish
+      ? "Khushi hui help karke! 😊 Kabhi bhi koi sawaal ho toh main yahin hoon."
+      : "Happy to help! 😊 Feel free to reach out anytime if anything else comes up.";
+    return {
+      text,
+      type: 'small_talk',
+      category: 'Small Talk',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Theek hai!", "Ek aur sawaal tha", "Properties explore karein"]
+        : ["Got it!", "One more question", "Explore Properties"]
+    };
+  }
+
+  // 4. Goodbyes
+  // CRITICAL REQUIREMENT: Acknowledge naturally ("Theek hai, koi bhi sawaal ho to main yahin hoon!") rather than ending abruptly or ignoring it
+  if (
+    /^(bye|goodbye|alvida|see you|tata|phir milte hain|take care|good night|chalta hoon|bye for now|later|cya)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Theek hai, koi bhi sawaal ho to main yahin hoon! Apna khayal rakhiye aur phir milte hain. 🙏"
+      : "Take care! If you ever have any questions or need a hand, I'm right here. Have a great day ahead! 🙏";
+    return {
+      text,
+      type: 'small_talk',
+      category: 'Small Talk',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Phir milenge", "Properties save kar li hain"]
+        : ["Take care", "Saved properties"]
+    };
+  }
+
+  // 5. Light casual remarks: user jokes, laughing, banter
+  if (
+    /\b(haha|hehe|lol|lmao|rofl|mazak|kidding|just kidding|mazak kar raha tha)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Haha, sahi hai! 😄 Waise property ya ghar ke baare mein kuch plan chal raha hai, ya bas aise hi casually explore kar rahe the?"
+      : "Haha, love the good spirits! 😄 Are you looking to explore homes anytime soon, or just checking things out casually today?";
+    return {
+      text,
+      type: 'small_talk',
+      category: 'Small Talk',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Ghar dekhna hai", "Bas aise hi browse", "Loan EMI check"]
+        : ["Looking for a home", "Just browsing", "Check Loan EMI"]
+    };
+  }
+
+  // 6. Telling a joke request
+  if (
+    /\b(joke sunao|tell me a joke|koi joke|say a joke)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Haha, ek real estate joke suniye — 'Ghar lene mein sabse mushkil kaam kya hota hai? Budget aur balcony ka view dono ko match karwana!' 😄 Waise agar koi verified property dekh rahe hain toh bataiye, budget match karwane mein help kar sakta hoon!"
+      : "Haha, here's a quick one: Why do real estate agents love windows? Because they provide a great outlook! 😄 On a serious note, if you're looking for real rooms or apartments, I'm right here!";
+    return {
+      text,
+      type: 'small_talk',
+      category: 'Small Talk',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Accha joke tha 😄", "Properties dikhao", "Loan EMI Calculator"]
+        : ["Good one 😄", "Show Properties", "Loan EMI Calculator"]
+    };
+  }
+
+  // 7. Light casual remarks on weather / day (passing remarks)
+  if (
+    /\b(bohot garmi|so hot|barish ho rahi|raining heavily|it'?s raining|rainy day|thand hai|so cold|weather is nice|mausam accha)\b/i.test(cleanMsg) &&
+    !cleanMsg.includes('delhi') && !cleanMsg.includes('mumbai') && !cleanMsg.includes('forecast')
+  ) {
+    const text = isHinglish
+      ? "Sach mein, mausam ka haal toh aisa hi chal raha hai! Ek cup chai ke sath ghar se baithkar dream properties browse karne ka perfect time hai waise. Kuch dekhna chahenge?"
+      : "Tell me about it! Sounds like the perfect weather to stay cozy indoors with a warm drink and browse some lovely homes online. Let me know if you want to look at any places!";
+    return {
+      text,
+      type: 'small_talk',
+      category: 'Small Talk',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Chaliye flats dekhte hain", "Mumbai me 2BHK", "Pune me villas"]
+        : ["Let's browse flats", "2 BHK in Mumbai", "Villas in Pune"]
+    };
+  }
+
+  // 8. Casual user feelings / tiredness
+  if (
+    /\b(thak gaya|exhausted|tired today|had a long day|chilling|just chilling|bore ho raha)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Arre re, thoda aaram kijiye aur break lijiye! Main saara paperwork aur property search ka heavy lifting sambhal loonga jab bhi aap ready hon."
+      : "Take it easy and get some well-deserved rest! Whenever you're ready, I can handle all the heavy lifting on home searches and paperwork for you.";
+    return {
+      text,
+      type: 'small_talk',
+      category: 'Small Talk',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Shukriya!", "Kal check karenge", "Properties save kar do"]
+        : ["Thanks!", "Will check tomorrow", "Save my search"]
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Handles easily answerable factual questions, live date/time, and currency/unit conversions
+ */
+function handleGeneralKnowledgeAndConversions(cleanMsg, isHinglish, lang) {
+  // 1. Live Today's Date / Day / Year
+  if (
+    /\b(today'?s date|todays date|what is the date|what date is it|aaj konsi date|aaj ki date|aaj kya tarikh|aaj kitni tareekh|current time|what day is it|aaj ka din|what is today)\b/i.test(cleanMsg)
+  ) {
+    const now = new Date();
+    const dateFormatted = now.toLocaleDateString('en-IN', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    const text = isHinglish
+      ? `Aaj **${dateFormatted}** hai! Bataiye, aaj property ke regarding kya plan hai — kuch naya explore karein?`
+      : `Today is **${dateFormatted}**. How can I help you with your property plans or questions today?`;
+
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'General Knowledge',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Flats in Mumbai", "Loan EMI Calculator", "RERA verified homes"]
+        : ["Find Apartments", "Loan EMI Calculator", "Check RERA Projects"]
+    };
+  }
+
+  // 2. Currency Conversions (Crore, Million, Lakh, USD to INR)
+  if (
+    /\b(crore in million|crore to million|million in crore|million to crore|1 crore in million|1 million in lakh|million in lakh|lakh in million|usd to inr|dollar in inr|rupees in dollar|1 million kitna|1 crore kitna)\b/i.test(cleanMsg)
+  ) {
+    let answerText = "";
+    if (cleanMsg.includes('crore in million') || cleanMsg.includes('crore to million') || cleanMsg.includes('1 crore in million') || cleanMsg.includes('1 crore kitna')) {
+      answerText = isHinglish
+        ? "1 Crore = **10 Million** (yaani 100 Lakhs). International real estate reports mein ₹1 Crore ko 10 Million likha jata hai."
+        : "1 Crore = **10 Million** (equal to 100 Lakhs). In international financial notation, 1 Crore is written as 10 Million.";
+    } else if (cleanMsg.includes('million in lakh') || cleanMsg.includes('million to lakh') || cleanMsg.includes('1 million kitna') || cleanMsg.includes('million in crore') || cleanMsg.includes('million to crore')) {
+      answerText = isHinglish
+        ? "1 Million = **10 Lakhs** (yaani 0.1 Crore). Is hisaab se 10 Million milkar 1 Crore banta hai."
+        : "1 Million = **10 Lakhs** (equal to 0.1 Crore). Thus, 10 Million equals 1 Crore in Indian numbering.";
+    } else if (cleanMsg.includes('usd') || cleanMsg.includes('dollar')) {
+      answerText = isHinglish
+        ? "USD to INR exchange rate aamtaur par **₹83 se ₹85 per US Dollar** ke beech rehta hai (exact value daily forex market par depend karti hai). NRI buyers FEMA guidelines ke tehat NRE/NRO account se property kharid sakte hain."
+        : "The USD to INR exchange rate typically trades around **₹83 to ₹85 per US Dollar** (subject to live forex fluctuations). NRI buyers can freely invest in residential properties in India using NRE/NRO bank accounts under FEMA guidelines.";
+    }
+
+    if (answerText) {
+      return {
+        text: answerText,
+        type: 'general_knowledge',
+        category: 'Conversions & Finance',
+        language: lang,
+        quickReplies: isHinglish
+          ? ["Home loan EMI kitni hogi?", "Carpet area calculation", "Properties dikhao"]
+          : ["Calculate Loan EMI", "Carpet Area Calculator", "Browse Properties"]
+      };
+    }
+  }
+
+  // 3. Indian Real Estate & Land Unit Conversions
+  // Gaj / Square Yard to Sq Ft
+  if (/\b(gaj to sq ft|sq yard to sq ft|gaj me kitna|1 gaj kitna|square yard to square feet)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "1 Gaj (Square Yard) = **9 Square Feet** (3 ft × 3 ft). Jaise 100 Gaj ka plot = **900 sq.ft** hota hai, aur 200 Gaj ka plot = **1,800 sq.ft** hota hai."
+      : "1 Gaj (Square Yard) = **9 Square Feet** (3 ft × 3 ft). For example, a 100 Gaj plot equals **900 sq.ft**, and a 200 Gaj plot equals **1,800 sq.ft**.";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'Unit Conversions',
+      language: lang,
+      quickReplies: isHinglish ? ["Acre to sq ft kitna hai?", "Carpet area kya hai?", "Plots dikhao"] : ["Acre to Sq Ft", "What is Carpet Area?", "Browse Plots"]
+    };
+  }
+
+  // Acre to Sq Ft / Gaj
+  if (/\b(acre to sq ft|acre to gaj|1 acre kitna|acre in sq ft)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "1 Acre = **43,560 Square Feet** (yaani **4,840 Gaj / Square Yards**, lagbhag 0.405 Hectares ya 40 Gunthas)."
+      : "1 Acre = **43,560 Square Feet** (which equals **4,840 Square Yards / Gaj**, approximately 0.405 Hectares or 40 Gunthas).";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'Unit Conversions',
+      language: lang,
+      quickReplies: isHinglish ? ["Hectare to acre", "Guntha to sq ft", "Agricultural land rules"] : ["Hectare to Acre", "Guntha to Sq Ft", "Explore Land Listings"]
+    };
+  }
+
+  // Hectare to Acre / Sq Ft
+  if (/\b(hectare to acre|hectare to sq ft|1 hectare kitna)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "1 Hectare = **2.471 Acres** (lagbhag **107,639 Square Feet** ya 10,000 Square Meters)."
+      : "1 Hectare = **2.471 Acres** (approximately **107,639 Square Feet** or 10,000 Square Meters).";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'Unit Conversions',
+      language: lang,
+      quickReplies: isHinglish ? ["Acre to sq ft", "Bigha in sq ft", "Land verify kaise karein"] : ["Acre to Sq Ft", "Bigha in Sq Ft", "Verify Land Records"]
+    };
+  }
+
+  // Bigha to Sq Ft
+  if (/\b(bigha to sq ft|bigha in sq ft|1 bigha kitna)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "1 Bigha ki value har state mein alag hoti hai: Uttar Pradesh/Bihar mein 1 Pucca Bigha ≈ **27,000 sq.ft**, Rajasthan mein ≈ **17,424 sq.ft**, aur West Bengal mein ≈ **14,400 sq.ft** hota hai."
+      : "1 Bigha varies by state: In Uttar Pradesh/Bihar 1 Pucca Bigha ≈ **27,000 sq.ft**, in Rajasthan ≈ **17,424 sq.ft**, and in West Bengal ≈ **14,400 sq.ft**.";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'Unit Conversions',
+      language: lang,
+      quickReplies: isHinglish ? ["Gaj to sq ft", "Acre in sq ft", "Land registry process"] : ["Gaj to Sq Ft", "Acre in Sq Ft", "Registration Process"]
+    };
+  }
+
+  // Guntha to Sq Ft
+  if (/\b(guntha to sq ft|guntha in sq ft|1 guntha kitna)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "1 Guntha (Maharashtra aur Karnataka mein standard measurement) = **1,089 Square Feet** (33 ft × 33 ft). 1 Acre mein poore **40 Guntha** hote hain."
+      : "1 Guntha (standard land measurement in Maharashtra & Karnataka) = **1,089 Square Feet** (33 ft × 33 ft). Exactly **40 Gunthas** make up 1 Acre.";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'Unit Conversions',
+      language: lang,
+      quickReplies: isHinglish ? ["Pune me plots", "Bengaluru me plots", "7/12 extract kya hai"] : ["Plots in Pune", "Plots in Bengaluru", "What is 7/12 Extract"]
+    };
+  }
+
+  // Cent to Sq Ft
+  if (/\b(cent to sq ft|cent in sq ft|1 cent kitna)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "1 Cent (Kerala aur Tamil Nadu mein widely used) = **435.6 Square Feet** (yaani 1 Acre ka 1/100th hissa)."
+      : "1 Cent (widely used in Kerala & Tamil Nadu) = **435.6 Square Feet** (equal to 1/100th of an Acre).";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'Unit Conversions',
+      language: lang,
+      quickReplies: isHinglish ? ["Plots in Chennai", "Plots in Kochi", "Acre to sq ft"] : ["Plots in Chennai", "Plots in Kochi", "Acre to Sq Ft"]
+    };
+  }
+
+  // Kanal & Marla to Sq Ft
+  if (/\b(kanal to sq ft|kanal in sq ft|1 kanal kitna|marla to sq ft)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "1 Kanal (Punjab, Haryana aur North India) = **5,445 Square Feet** (605 Sq Yards). 1 Kanal mein 20 Marlas hote hain, aur 1 Marla = **272.25 Square Feet** hota hai."
+      : "1 Kanal (used in Punjab, Haryana & North India) = **5,445 Square Feet** (605 Sq Yards). 1 Kanal contains 20 Marlas, with 1 Marla equal to **272.25 Square Feet**.";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'Unit Conversions',
+      language: lang,
+      quickReplies: isHinglish ? ["Plots in Chandigarh", "Plots in Gurugram", "Gaj to sq ft"] : ["Plots in Chandigarh", "Plots in Gurugram", "Gaj to Sq Ft"]
+    };
+  }
+
+  // Square Meter to Square Feet
+  if (/\b(sq meter to sq ft|sqm to sqft|square meter to square feet)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "1 Square Meter (sq.m) = **10.764 Square Feet** (sq.ft). Jaise 100 sq.m ka apartment lagbhag **1,076 sq.ft** carpet area hota hai."
+      : "1 Square Meter (sq.m) = **10.764 Square Feet** (sq.ft). For example, a 100 sq.m apartment equals approximately **1,076 sq.ft** of floor area.";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'Unit Conversions',
+      language: lang,
+      quickReplies: isHinglish ? ["Carpet area definition", "2 BHK flats", "Properties dikhao"] : ["Carpet Area Norms", "2 BHK Flats", "Browse Listings"]
+    };
+  }
+
+  // 4. Simple Factual Knowledge
+  // Capital of India
+  if (/\b(capital of india|bharat ki rajdhani|india ki capital)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "Bharat (India) ki capital **New Delhi** hai! INDSTATE par Delhi NCR (Delhi, Noida, Gurugram) ke top RERA-verified projects listed hain."
+      : "The capital of India is **New Delhi**. INDSTATE features hundreds of verified listings across Delhi NCR, including Noida and Gurugram.";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'General Knowledge',
+      language: lang,
+      quickReplies: isHinglish ? ["Delhi me flats", "Gurugram me apartments", "Noida properties"] : ["Flats in Delhi", "Flats in Gurugram", "Flats in Noida"]
+    };
+  }
+
+  // Prime Minister of India
+  if (/\b(prime minister of india|pm of india|bharat ke pradhan mantri)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "Bharat ke current Prime Minister **Shri Narendra Modi** hain. Waise housing sector ke liye unka flagship initiative 'Pradhan Mantri Awas Yojana (PMAY)' affordable homes par subsidy deta hai. Kya aap PMAY eligibility dekhna chahte hain?"
+      : "The current Prime Minister of India is **Shri Narendra Modi**. In the real estate sector, the flagship 'Pradhan Mantri Awas Yojana (PMAY)' initiative provides credit-linked interest subsidies for eligible homebuyers. Would you like to check PMAY subsidy details?";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'General Knowledge',
+      language: lang,
+      quickReplies: isHinglish ? ["PMAY details batao", "Home loan interest", "Affordable housing"] : ["PMAY Scheme Details", "Home Loan Rates", "Affordable Housing"]
+    };
+  }
+
+  // States in India
+  if (/\b(how many states in india|kitne states hain india|states in india)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "Bharat mein total **28 States aur 8 Union Territories** hain — aur INDSTATE in sabhi 28 states mein 100% verified properties aur RERA transparency provide karta hai!"
+      : "India has **28 States and 8 Union Territories** — and INDSTATE covers RERA-verified real estate across all 28 Indian states!";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'General Knowledge',
+      language: lang,
+      quickReplies: isHinglish ? ["Maharashtra properties", "Karnataka properties", "All states"] : ["Maharashtra Listings", "Karnataka Listings", "Browse All States"]
+    };
+  }
+
+  // Current RBI Repo Rate
+  if (/\b(repo rate kya hai|current repo rate|rbi repo rate|rbi interest rate)\b/i.test(cleanMsg)) {
+    const text = isHinglish
+      ? "Reserve Bank of India (RBI) ka current benchmark Repo Rate **6.50%** par hai. Banks ke floating home loans isi repo rate se linked (EBLR) hote hain, isliye national banks mein home loan rates 8.40% se 8.75% ke range mein chal rahe hain."
+      : "The Reserve Bank of India (RBI) benchmark Repo Rate currently stands at **6.50%**. Because floating home loans are pegged to the repo rate (EBLR), leading Indian banks offer home loans starting from 8.40% to 8.75% p.a.";
+    return {
+      text,
+      type: 'general_knowledge',
+      category: 'Home Loans & Finance',
+      language: lang,
+      quickReplies: isHinglish ? ["EMI Calculator kholo", "SBI vs HDFC loan", "Pre-approval check"] : ["Open EMI Calculator", "SBI vs HDFC Rates", "Check Pre-approval"]
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Handles questions requiring live / current dynamic information (Weather, Scores, Stocks, News)
+ * Adheres strictly to honesty guidelines: acknowledges limitation warmly, suggests alternatives,
+ * and smoothly guides back to property topics without being pushy.
+ */
+function handleRealtimeLimitations(cleanMsg, isHinglish, lang) {
+  // 1. Live Weather / Temperature / Forecast
+  if (
+    /\b(weather|temperature|forecast|mausam kaisa|barish hogi|aaj ka mausam)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Ye mujhe abhi real-time pata nahi chal payega, kyunki mere paas live meteorological weather satellite feeds ka direct access nahi hai! Aap apne phone ka Weather app check kar sakte hain live forecast ke liye. Waise property ya ghar ke baare mein kuch help chahiye?"
+      : "I don't have access to live real-time weather feeds, so I wouldn't want to guess or give you an outdated forecast! You can quickly check your phone's Weather app for live local temperatures. In the meantime, let me know if there's any property or home loan question I can assist you with!";
+    return {
+      text,
+      type: 'realtime_limitation',
+      category: 'Real-Time Limitation',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Properties explore karein", "Home Loan EMI check", "RERA verified flats"]
+        : ["Explore Properties", "Calculate Loan EMI", "Check RERA Listings"]
+    };
+  }
+
+  // 2. Live Sports / Cricket Scores / Matches
+  if (
+    /\b(cricket score|ipl score|match score|live score|score kya hua|kaun jeeta|who won the match)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Ye live match score mujhe abhi real-time pata nahi chal payega, kyunki mere paas live sports feeds ka integration nahi hai. Aap Google ya Cricbuzz par live scorecard dekh sakte hain! Waise real estate ya properties ke baare mein koi sawaal ho toh zaroor poochiye."
+      : "I don't have live real-time integration for sports or match scores! You can easily catch the live scorecard on Google or Cricbuzz. Let me know if there's anything real-estate or property-related I can assist with though!";
+    return {
+      text,
+      type: 'realtime_limitation',
+      category: 'Real-Time Limitation',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Flats in Mumbai", "Loan eligibility", "RERA status check"]
+        : ["Flats in Mumbai", "Loan Eligibility", "Check RERA Status"]
+    };
+  }
+
+  // 3. Live Stock Prices / Share Market / Crypto
+  if (
+    /\b(stock price|share price|sensex today|nifty today|reliance share|tata share|bitcoin price|crypto price|share market live)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Stock aur crypto markets second-by-second fluctuate karte hain aur mere paas live ticker terminal feed nahi hai, isliye main galat rate quote nahi karna chahta. Aap Moneycontrol ya Google Finance par live rates check kar sakte hain! Agar aap real estate investment ya rental yield ke baare mein kuch jaanna chahte hain, toh main zaroor help kar sakta hoon."
+      : "Stock and equity prices fluctuate second-by-second and I don't have a live market terminal feed, so I wouldn't want to quote an inaccurate figure! You can check Google Finance or Moneycontrol for live market rates. If you're comparing property investment yields or home loan rates, however, I'm right here to help!";
+    return {
+      text,
+      type: 'realtime_limitation',
+      category: 'Real-Time Limitation',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Rental yield kitna hota hai?", "Commercial vs Residential", "Properties dikhao"]
+        : ["Rental Yield Guide", "Commercial vs Residential", "Browse Properties"]
+    };
+  }
+
+  // 4. Breaking News Headlines
+  if (
+    /\b(breaking news|news today|aaj ki taaza khabar|latest headlines|news headlines)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Live breaking news ke liye mere paas real-time media telecast feed nahi hai — aap kisi news app ya Google News par latest headlines dekh sakte hain! Real estate policy, RERA reforms aur property trends ke baare mein jaankari chahiye ho toh main poori madad karunga."
+      : "I don't have a live breaking news feed, so you can check Google News or your favorite news app for today's headlines! If you'd like updates on real estate policies, RERA guidelines, or property market trends, I'd be happy to share.";
+    return {
+      text,
+      type: 'realtime_limitation',
+      category: 'Real-Time Limitation',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["RERA reforms kya hain?", "Stamp duty rates", "Top projects"]
+        : ["RERA Reforms", "Stamp Duty Rates", "Top Verified Projects"]
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Handles completely off-topic questions (Coding, Cooking/Recipes, Essays, Medical Advice)
+ * Warm, slightly playful about being specialized in real estate.
+ */
+function handleOfftopicSpecialization(cleanMsg, isHinglish, lang) {
+  // 1. Coding & Programming
+  if (
+    /\b(code|coding|python|javascript|programmer|programming|developer|debug|react|html|css|c\+\+|java|sql|build an app|script)\b/i.test(cleanMsg) &&
+    !cleanMsg.includes('pincode') && !cleanMsg.includes('pin code')
+  ) {
+    const text = isHinglish
+      ? "Haha, coding aur programming mera area nahi hai! 😄 Main ghar-dhundhne, RERA, loans, aisi cheezon mein expert hoon — koi property-related sawaal ho to zaroor poochiye!"
+      : "Haha, coding is outside my wheelhouse! 😄 I'm an expert at home hunting, RERA checks, home loans, and property paperwork — happy to help with any of those though!";
+    return {
+      text,
+      type: 'offtopic_specialization',
+      category: 'Off-Topic',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Ghar dhoondhna hai", "Loan EMI calculation", "RERA rules"]
+        : ["Find a Home", "Calculate EMI", "Check RERA Rules"]
+    };
+  }
+
+  // 2. Cooking / Recipes / Food Preparation
+  if (
+    (/\b(recipe|biryani|cook|khana kaise banaye|how to cook|dish recipe|pasta recipe|maggi|curry recipe|paneer recipe|how to bake)\b/i.test(cleanMsg)) &&
+    !cleanMsg.includes('kitchen modular') && !cleanMsg.includes('modular kitchen')
+  ) {
+    const text = isHinglish
+      ? "Haha, biryani aur cooking mera area nahi hai! 😄 Main ghar-dhundhne, RERA, loans, aisi cheezon mein expert hoon — koi property-related sawaal ho to zaroor poochiye!"
+      : "Haha, cooking and recipes are outside my area of expertise! 😄 I'm an expert at home hunting, RERA checks, home loans, and property paperwork — happy to help with any of those though!";
+    return {
+      text,
+      type: 'offtopic_specialization',
+      category: 'Off-Topic',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Modular kitchen wale flats", "Properties dikhao", "Loan eligibility"]
+        : ["Flats with Modular Kitchen", "Browse Properties", "Check Loan EMI"]
+    };
+  }
+
+  // 3. School Essays / Poems / Songs
+  if (
+    /\b(write an essay|write a poem|sing a song|do my homework|write a speech|write a story)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Haha, essays aur poems likhna mera department nahi hai! 😄 Main property market insights, home loan numbers aur legal paperwork mein expert hoon — real estate ke baare mein koi plan ho toh batayein!"
+      : "Haha, writing essays or poems is a bit outside my zone! 😄 I specialize in real estate intelligence, home loan numbers, and property legalities. If you ever have a question about homes or loans, I'm right here!";
+    return {
+      text,
+      type: 'offtopic_specialization',
+      category: 'Off-Topic',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Property search karein", "Home Loan calculator", "RERA verified homes"]
+        : ["Search Properties", "Loan Calculator", "Explore Verified Homes"]
+    };
+  }
+
+  // 4. Medical / Health Diagnoses
+  if (
+    /\b(medicine for|doctor advice|fever medicine|headache dawa|dawai|tablet for)\b/i.test(cleanMsg)
+  ) {
+    const text = isHinglish
+      ? "Health aur medical advice ke liye please kisi qualified doctor ya healthcare professional se consult karein — main sirf real estate aur property decisions mein expert hoon! Apna khayal rakhiye! 🙏"
+      : "For health and medical advice, please consult a certified doctor or healthcare professional — real estate is my only domain! Please take care of yourself! 🙏";
+    return {
+      text,
+      type: 'offtopic_specialization',
+      category: 'Off-Topic',
+      language: lang,
+      quickReplies: isHinglish
+        ? ["Theek hai", "Hospital ke paas flats", "Properties dikhao"]
+        : ["Understood", "Flats near hospitals", "Browse Properties"]
     };
   }
 
@@ -574,10 +1227,34 @@ export function synthesizeRAGResponse({
   // Extract memory entities across session
   const entities = extractEntitiesFromHistory(conversationHistory, userMessage);
 
-  // 1. Check for Casual Small Talk (Greetings, Gratitude, Goodbyes)
-  const smallTalkResponse = handleSmallTalk(cleanMsg, isHinglish, lang);
+  // 1. Check for Personal Milestone Announcement (Birthday, Anniversary, New Job, Relocation)
+  const milestoneResponse = handlePersonalMilestones(cleanMsg, isHinglish, lang, entities);
+  if (milestoneResponse) {
+    return milestoneResponse;
+  }
+
+  // 2. Check for Casual Small Talk (Greetings, How-are-you, Gratitude, Goodbyes, Banter/Jokes, Weather, Feelings)
+  const smallTalkResponse = handleCasualSmallTalk(cleanMsg, isHinglish, lang, entities);
   if (smallTalkResponse) {
     return smallTalkResponse;
+  }
+
+  // 3. Check for General Knowledge & Conversions (Live Date/Time, Crore-Million, Land units, Simple Facts)
+  const gkResponse = handleGeneralKnowledgeAndConversions(cleanMsg, isHinglish, lang);
+  if (gkResponse) {
+    return gkResponse;
+  }
+
+  // 4. Check for Live/Real-Time Limitation Queries (Live Weather, Live Cricket/Sports, Live Stocks, Breaking News)
+  const realtimeResponse = handleRealtimeLimitations(cleanMsg, isHinglish, lang);
+  if (realtimeResponse) {
+    return realtimeResponse;
+  }
+
+  // 5. Check for Off-Topic Specialization Queries (Coding, Recipes/Cooking, Poems/Essays, Medical)
+  const offtopicResponse = handleOfftopicSpecialization(cleanMsg, isHinglish, lang);
+  if (offtopicResponse) {
+    return offtopicResponse;
   }
 
   // 2. Frustration / "Didn't Work" / 2-Strike Failure Escalation
@@ -641,19 +1318,30 @@ export function synthesizeRAGResponse({
     const carpetArea = topProp.carpetArea || topProp.carpetAreaSqFt || '1,200+';
     const baths = topProp.bathrooms || topProp.baths || 2;
 
+    let milestoneNote = "";
+    if (entities?.milestones?.birthday && !entities?.milestones?.birthdayAcknowledgedRecently) {
+      milestoneNote = isHinglish
+        ? `\n\n*(Aur haan, aapko Janamdin ki bohot saari shubhkaamnayein once again! 🎂)*`
+        : `\n\n*(And wishing you a wonderful birthday once again! 🎉)*`;
+    } else if (entities?.milestones?.newJob && !entities?.milestones?.newJobAcknowledgedRecently) {
+      milestoneNote = isHinglish
+        ? `\n\n*(Aur aapko nayi job/role ke liye badhaiyan once again! 💼)*`
+        : `\n\n*(And congratulations on the new role once again! 💼)*`;
+    }
+
     const text = isHinglish
       ? `Haanji! Mujhe aapke search ke anusaar **${topProp.title}** (${topProp.locality}, ${topProp.city}) mil gaya hai. 
          \n• **Price:** ${priceFormatted}
          \n• **RERA Status:** ${topProp.isReraVerified ? `Verified (${topProp.reraNumber})` : 'Under Verification'}
          \n• **Carpet Area:** ${carpetArea} sq.ft. (Actual Usable Area)
          \n• **Configuration:** ${topProp.bhk} BHK • ${baths} Baths
-         \nKya aap iss property ke liye free escorted site inspection schedule karna chahenge?`
+         \nKya aap iss property ke liye free escorted site inspection schedule karna chahenge?${milestoneNote}`
       : `Yes! I found **${topProp.title}** located in ${topProp.locality}, ${topProp.city}.
          \n• **Price:** ${priceFormatted}
          \n• **RERA Status:** ${topProp.isReraVerified ? `Verified (${topProp.reraNumber})` : 'Under Verification'}
          \n• **Carpet Area:** ${carpetArea} sq.ft. (100% Usable Carpet Area)
          \n• **Layout:** ${topProp.bhk} BHK • ${baths} Baths
-         \nWould you like to schedule a free escorted site inspection for this property?`;
+         \nWould you like to schedule a free escorted site inspection for this property?${milestoneNote}`;
 
     return {
       text,

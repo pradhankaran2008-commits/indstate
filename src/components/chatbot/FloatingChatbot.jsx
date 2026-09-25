@@ -18,26 +18,45 @@ const DEFAULT_QUICK_REPLIES = [
   "Talk to Agent"
 ];
 
+const PROACTIVE_CHIPS = [
+  { label: "🏠 Flat / Ghar", query: "Mujhe verified flat ya ghar dekhna hai" },
+  { label: "🔑 Rent / PG", query: "Rent par flat ya PG dekhna hai" },
+  { label: "🏢 RERA Status", query: "RERA verification aur registered projects check karne hain" },
+  { label: "💰 Home Loan", query: "Home loan eligibility aur EMI calculate karni hai" }
+];
+
 const PROACTIVE_TOOLTIP_MESSAGES = {
   mixed: [
+    "Kya dhoondh rahe hain? Main madad karoon? 🏠",
     "Hey! How can I help you? 👋",
     "Looking for a home? Ask me anything",
     "Koi property dhundh rahe hain? Poochiye!",
-    "Check RERA status of any project 🏢",
-    "Need help with home loan or EMI?"
-  ],
-  hinglish: [
-    "Hey! How can I help you? 👋",
-    "Koi property dhundh rahe hain? Poochiye!",
-    "Ghar dhundh rahe hain? Main help karoon? 🏠",
-    "RERA verified flats dekhna chahte hain?",
-    "Home loan ya EMI calculation me help chahiye?"
-  ],
-  en: [
-    "Hey! How can I help you? 👋",
-    "Looking for a home? Ask me anything",
+    "Koi property dhundh rahe hain? Poochiye! 🔍",
+    "Looking for a verified home? Ask me anything 👋",
     "Check RERA status of any project 🏢",
     "Need help with home loan or EMI?",
+    "Need help with home loan or EMI? 💰"
+  ],
+  hinglish: [
+    "Kya dhoondh rahe hain? Main madad karoon? 🏠",
+    "Hey! How can I help you? 👋",
+    "Koi property dhundh rahe hain? Poochiye!",
+    "Koi property dhundh rahe hain? Poochiye! 🔍",
+    "Ghar dhundh rahe hain? Main help karoon? 🏠",
+    "RERA verified flats dekhna chahte hain?",
+    "RERA verified flats dekhna chahte hain? 🏢",
+    "Namaste! Kaise madad kar sakta hoon? 👋",
+    "Home loan ya EMI calculation me help chahiye?",
+    "Home loan ya EMI calculation me help chahiye? 💰"
+  ],
+  en: [
+    "What are you looking for? Let me help! 🏠",
+    "Hey! How can I help you? 👋",
+    "Looking for a home? Ask me anything",
+    "Need help finding verified properties? 👋",
+    "Check RERA status of any project 🏢",
+    "Need help with home loan or EMI?",
+    "Need help with home loan or EMI? 💰",
     "Search verified properties across India 🇮🇳"
   ]
 };
@@ -72,18 +91,21 @@ export default function FloatingChatbot() {
   });
   const [leadSubmitted, setLeadSubmitted] = useState(false);
 
-  // Proactive Tooltip State & Dismiss Tracking
+  // Proactive Tooltip State & Cadence
   const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipIdx, setTooltipIdx] = useState(0);
-  const [dismissCount, setDismissCount] = useState(() => {
-    try {
-      return parseInt(sessionStorage.getItem(STORAGE_DISMISS_COUNT_KEY) || '0', 10);
-    } catch {
-      return 0;
-    }
-  });
+  const [tooltipIdx, setTooltipIdx] = useState(-1);
 
   const messagesEndRef = useRef(null);
+
+  // Clear any old session lockout keys on mount so user's existing tab is unblocked immediately
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem(STORAGE_DISMISS_COUNT_KEY);
+      sessionStorage.removeItem('indstate_chatbot_interacted_v2');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Auto-scroll messages
   useEffect(() => {
@@ -92,17 +114,12 @@ export default function FloatingChatbot() {
     }
   }, [messages, isTyping, isOpen]);
 
-  // Proactive Tooltip Cadence & Dismissal Management:
-  // 1. Initial 5s trigger: pops up once user is on site 5+ seconds without opening chat
-  // 2. Gentle pop animation (scale 0.9 to 1 + fade), auto-dismisses after 3.5s
-  // 3. Cadence: repeats roughly every 5 seconds while chatbot is closed & un-interacted
-  // 4. Single popup only: only one visible at a time, never stacked
-  // 5. Interaction suppression: ceases 5s loop once user interacts (opens chat, dismisses, or sends message)
-  //    Falls back to a much less frequent occasional nudge (~3.5 minutes)
-  // 6. Manual dismissal suppression: stops repeating permanently if dismissed manually >= 2 times
+  // Proactive Tooltip Cadence:
+  // 1. Initial trigger: pops up ~2.2s after mount (~4.7s from page open including 2.5s brand intro)
+  // 2. Gentle pop animation (scale 0.9 to 1 + fade), visible for 6.0s so user can read & tap chips
+  // 3. Cadence: rotates every 7 seconds with next helpful property question while closed
   useEffect(() => {
-    // If chatbot is currently open or user dismissed >= 2 times, keep tooltip closed
-    if (isOpen || dismissCount >= 2) {
+    if (isOpen) {
       setShowTooltip(false);
       return;
     }
@@ -118,32 +135,28 @@ export default function FloatingChatbot() {
         setTooltipIdx(prev => prev + 1);
         setShowTooltip(true);
 
-        // Auto-dismiss after 3.5 seconds if not clicked
+        // Auto-dismiss after 6.0 seconds if not clicked
         dismissTimer = setTimeout(() => {
           if (isCancelled) return;
           setShowTooltip(false);
 
-          // If still closed and user hasn't interacted, repeat roughly every 5 seconds
-          // If interacted in session, fall back to a much less frequent occasional nudge (~3.5 min)
-          if (!hasInteracted) {
-            scheduleNextPopup(5000);
-          } else {
-            scheduleNextPopup(210000);
+          // If still closed, re-trigger after 7 seconds with next message
+          if (!isOpen) {
+            scheduleNextPopup(7000);
           }
-        }, 3500);
+        }, 6000);
       }, delayMs);
     };
 
-    // First trigger: 5+ seconds after load if un-interacted, or 3.5 min if already interacted
-    const initialDelay = hasInteracted ? 210000 : 5000;
-    scheduleNextPopup(initialDelay);
+    // First trigger: 2.2 seconds after mount (~4.7-5s total from page load)
+    scheduleNextPopup(2200);
 
     return () => {
       isCancelled = true;
       if (showTimer) clearTimeout(showTimer);
       if (dismissTimer) clearTimeout(dismissTimer);
     };
-  }, [isOpen, hasInteracted, dismissCount]);
+  }, [isOpen]);
 
   const handleSend = (e) => {
     e.preventDefault();
@@ -162,19 +175,17 @@ export default function FloatingChatbot() {
     setIsOpen(true);
   };
 
+  const handleChipClick = (e, query) => {
+    e.stopPropagation();
+    markInteracted();
+    setShowTooltip(false);
+    setIsOpen(true);
+    sendMessage(query);
+  };
+
   const handleDismissTooltip = (e) => {
     e.stopPropagation();
     setShowTooltip(false);
-    markInteracted(); // Stop the aggressive 5s repeating loop immediately
-    setDismissCount(prev => {
-      const next = prev + 1;
-      try {
-        sessionStorage.setItem(STORAGE_DISMISS_COUNT_KEY, String(next));
-      } catch (err) {
-        console.error(err);
-      }
-      return next;
-    });
   };
 
   const handleLeadSubmit = (e) => {
@@ -202,7 +213,7 @@ export default function FloatingChatbot() {
     <>
       {/* Proactive Idle Speech Bubble Tooltip */}
       <AnimatePresence>
-        {!isOpen && showTooltip && dismissCount < 2 && (
+        {!isOpen && showTooltip && (
           <motion.div
             className="chatbot-proactive-bubble"
             initial={{ opacity: 0, scale: 0.9, y: 8 }}
@@ -214,18 +225,33 @@ export default function FloatingChatbot() {
             tabIndex={0}
             aria-label="Chat assistant suggestion"
           >
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
-            <p className="bubble-text">
-              {currentTooltipMessage}
-            </p>
-            <button 
-              type="button" 
-              className="bubble-close"
-              onClick={handleDismissTooltip}
-              aria-label="Dismiss suggestion"
-            >
-              <X size={13} />
-            </button>
+            <div className="bubble-header">
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent)', flexShrink: 0, boxShadow: '0 0 8px var(--accent)' }} />
+              <p className="bubble-text">
+                {currentTooltipMessage}
+              </p>
+              <button 
+                type="button" 
+                className="bubble-close"
+                onClick={handleDismissTooltip}
+                aria-label="Dismiss suggestion"
+              >
+                <X size={13} />
+              </button>
+            </div>
+
+            <div className="bubble-chips">
+              {PROACTIVE_CHIPS.map(chip => (
+                <button
+                  key={chip.label}
+                  type="button"
+                  className="bubble-chip"
+                  onClick={(e) => handleChipClick(e, chip.query)}
+                >
+                  {chip.label}
+                </button>
+              ))}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

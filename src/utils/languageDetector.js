@@ -11,7 +11,13 @@ const HINGLISH_TOKENS = new Set([
   'mera', 'meri', 'mere', 'aap', 'tum', 'bhai', 'ji', 'namaste', 'shukriya',
   'dhanyawad', 'kiraya', 'kharidna', 'bechna', 'mujhe', 'humko', 'kuch',
   'kripya', 'mil', 'sakta', 'sakti', 'hoga', 'hogi', 'paas', 'thoda', 'theek',
-  'paisa', 'paise', 'bhejo', 'karo', 'baat', 'karni', 'bhi', 'wala', 'wali'
+  'paisa', 'paise', 'bhejo', 'karo', 'baat', 'karni', 'bhi', 'wala', 'wali',
+  'ho', 'haal', 'kaisa', 'kaisi', 'bataiye', 'aaj', 'kal', 'din', 'tarikh', 'tareekh',
+  'taarikh', 'saal', 'samay', 'waqt', 'mausam', 'barish', 'garmi', 'sardi', 'thand',
+  'alvida', 'badhiya', 'badiya', 'chal', 'raha', 'rahi', 'rahe', 'suno', 'bhaiya',
+  'dost', 'sab', 'bolo', 'sunao', 'biryani', 'khana', 'banaye', 'sawaal', 'sawal',
+  'madad', 'batayein', 'dekh', 'janamdin', 'shubh', 'arre', 'waah', 'toh', 'aur',
+  'agar', 'kar', 'lo', 'karna', 'mazak', 'chalta', 'gaya', 'gayi', 'hasi', 'acche'
 ]);
 
 export function detectLanguage(text) {

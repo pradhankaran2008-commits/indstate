@@ -227,7 +227,7 @@ export default function PropertyTypes() {
   };
 
   return (
-    <section style={{ padding: '80px 0 110px', background: 'var(--bg-page)', overflow: 'hidden' }}>
+    <section style={{ padding: '80px 0 110px', background: 'var(--bg-page)', overflow: 'hidden', contain: 'paint' }}>
       <div className="container" style={{ position: 'relative' }}>
         <ScrollReveal y={24} duration={0.65}>
           <div className="section-header" style={{ marginBottom: '36px' }}>
@@ -316,6 +316,7 @@ export default function PropertyTypes() {
         style={{
           width: '100%',
           overflow: 'hidden',
+          contain: 'paint',
           perspective: '1400px',
           perspectiveOrigin: 'center center',
           padding: '24px 0 44px',

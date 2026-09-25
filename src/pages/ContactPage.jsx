@@ -50,14 +50,14 @@ export default function ContactPage() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '36px', marginBottom: '50px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))', gap: '30px', marginBottom: '50px' }}>
           {/* Contact Form */}
           <div 
             style={{
               background: '#FFFFFF',
               borderRadius: 'var(--radius-lg)',
               border: '1px solid var(--border-color)',
-              padding: '36px',
+              padding: 'clamp(18px, 4vw, 36px)',
               boxShadow: 'var(--shadow-xs)'
             }}
           >

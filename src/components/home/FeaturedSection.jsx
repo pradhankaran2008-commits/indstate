@@ -75,7 +75,7 @@ export default function FeaturedSection() {
             transition={{ duration: 0.32, ease: crevixEase }}
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
               gap: '28px',
               marginBottom: '40px'
             }}

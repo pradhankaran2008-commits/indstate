@@ -29,8 +29,8 @@ export default function BlogPreview() {
         <div 
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '28px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gap: '24px',
             marginBottom: '40px'
           }}
         >
@@ -132,9 +132,9 @@ export default function BlogPreview() {
 
         <ScrollReveal y={18} duration={0.6} delay={0.2}>
           <div style={{ textAlign: 'center' }}>
-            <Link to="/blog" className="btn btn-outline btn-lg">
+            <Link to="/blog" className="btn btn-outline btn-lg" style={{ maxWidth: '100%', whiteSpace: 'normal', textAlign: 'center' }}>
               <span>Explore All Indian Real Estate Guides</span>
-              <ArrowRight size={18} />
+              <ArrowRight size={18} style={{ flexShrink: 0 }} />
             </Link>
           </div>
         </ScrollReveal>

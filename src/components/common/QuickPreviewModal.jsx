@@ -45,8 +45,8 @@ export default function QuickPreviewModal() {
             right: '16px',
             background: 'rgba(15, 37, 68, 0.7)',
             color: '#FFFFFF',
-            width: '36px',
-            height: '36px',
+            width: '44px',
+            height: '44px',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
@@ -57,7 +57,7 @@ export default function QuickPreviewModal() {
           <X size={20} />
         </button>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))' }}>
           {/* Left: Image Slider */}
           <div style={{ position: 'relative', height: '360px', background: '#000' }}>
             <img 

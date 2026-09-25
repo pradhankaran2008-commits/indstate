@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, useMotionValueEvent } from 'framer-motion';
 import {
   Search, ShieldCheck, Car, KeyRound, CheckCircle2,
@@ -93,6 +93,16 @@ const cardsData = [
 export default function HowItWorksSticky() {
   const containerRef = useRef(null);
   const [activeStep, setActiveStep] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Vertical scroll progress bound exclusively to the tall parent section
   const { scrollYProgress } = useScroll({
@@ -102,6 +112,7 @@ export default function HowItWorksSticky() {
 
   // Track active step for top navigation pills
   useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    if (isMobile) return;
     let next = 0;
     if (latest < 0.25) next = 0;
     else if (latest < 0.55) next = 1;
@@ -113,6 +124,14 @@ export default function HowItWorksSticky() {
 
   // Smooth scroll to card when user clicks a nav pill
   const handleNavClick = (idx) => {
+    setActiveStep(idx);
+    if (isMobile) {
+      const cardEl = document.getElementById(`how-it-works-step-${idx + 1}`);
+      if (cardEl) {
+        cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+      return;
+    }
     if (!containerRef.current) return;
     const container = containerRef.current;
     const rect = container.getBoundingClientRect();
@@ -243,8 +262,14 @@ export default function HowItWorksSticky() {
             return (
               <motion.div
                 key={card.id}
+                id={`how-it-works-step-${idx + 1}`}
                 className="hedvig-card"
-                style={{
+                style={isMobile ? {
+                  borderTop: `3px solid ${card.color}`,
+                  position: 'relative',
+                  transform: 'none',
+                  opacity: 1
+                } : {
                   y: motionStyle.y,
                   scale: motionStyle.scale,
                   opacity: motionStyle.opacity,
@@ -259,7 +284,7 @@ export default function HowItWorksSticky() {
                       src={card.image}
                       alt={card.title}
                       className="hedvig-card-img"
-                      style={{ scale: motionStyle.imgScale }}
+                      style={isMobile ? {} : { scale: motionStyle.imgScale }}
                       loading="eager"
                     />
                     <div className="hedvig-card-media-overlay" />

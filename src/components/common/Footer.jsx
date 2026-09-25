@@ -233,11 +233,11 @@ export default function Footer() {
           viewport={{ once: true, amount: 0.2 }}
         />
 
-        {/* 2. MAIN 4-COLUMN FOOTER LINKS */}
+        {/* 2. MAIN 3-COLUMN FOOTER LINKS */}
         <motion.div 
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
             gap: '40px',
             padding: '50px 0'
           }}
@@ -305,32 +305,6 @@ export default function Footer() {
               <li><Link to="/about" className="footer-interactive-link">About INDSTATE</Link></li>
               <li><Link to="/contact" className="footer-interactive-link">Contact Our City Hubs</Link></li>
             </ul>
-          </motion.div>
-
-          {/* Column 4: Newsletter Signup */}
-          <motion.div variants={columnItemVariants}>
-            <h4 style={{ color: '#FFFFFF', fontSize: '16px', marginBottom: '18px', fontFamily: 'var(--font-display)' }}>
-              Indian Market Alerts
-            </h4>
-            <p style={{ fontSize: '13px', marginBottom: '14px', color: '#94A3B8', lineHeight: 1.5 }}>
-              Subscribe to get weekly notifications on high-growth infrastructure corridors, new RERA launches, and RBI interest rate trends.
-            </p>
-            <form onSubmit={(e) => { e.preventDefault(); alert("Dhanyawad! You have been subscribed to INDSTATE Property Alerts."); }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input 
-                  type="email" 
-                  placeholder="Enter email address" 
-                  required
-                  className="footer-newsletter-input"
-                />
-                <button type="submit" className="btn btn-primary btn-sm footer-newsletter-btn" style={{ padding: '0 14px' }}>
-                  <ArrowRight size={16} />
-                </button>
-              </div>
-            </form>
-            <div style={{ marginTop: '14px', fontSize: '12px', color: '#64748B' }}>
-              🔒 100% spam-free. Unsubscribe anytime.
-            </div>
           </motion.div>
         </motion.div>
 

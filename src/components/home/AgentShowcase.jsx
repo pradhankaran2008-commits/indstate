@@ -162,9 +162,9 @@ export default function AgentShowcase() {
 
         <ScrollReveal y={18} duration={0.6} delay={0.2}>
           <div style={{ textAlign: 'center' }}>
-            <Link to="/agents" className="btn btn-outline btn-lg">
+            <Link to="/agents" className="btn btn-outline btn-lg" style={{ maxWidth: '100%', whiteSpace: 'normal', textAlign: 'center' }}>
               <span>View All Verified Indian Real Estate Agents</span>
-              <ArrowRight size={18} />
+              <ArrowRight size={18} style={{ flexShrink: 0 }} />
             </Link>
           </div>
         </ScrollReveal>

@@ -81,8 +81,8 @@ export default function WhyIndstate() {
         <div 
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '28px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+            gap: '24px',
             marginBottom: '40px'
           }}
         >
@@ -100,7 +100,7 @@ export default function WhyIndstate() {
                   onMouseEnter={() => setHoveredIdx(idx)}
                   onMouseLeave={() => setHoveredIdx(null)}
                   style={{
-                    padding: '30px',
+                    padding: 'clamp(20px, 4vw, 30px)',
                     borderRadius: 'var(--radius-lg)',
                     border: isHovered ? '1px solid var(--saffron)' : '1px solid var(--border-color)',
                     background: 'var(--bg-page)',

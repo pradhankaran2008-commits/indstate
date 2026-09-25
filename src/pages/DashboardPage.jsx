@@ -34,14 +34,14 @@ export default function DashboardPage() {
             background: '#FFFFFF',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border-color)',
-            padding: '28px',
+            padding: 'clamp(16px, 4vw, 28px)',
             marginBottom: '32px',
             boxShadow: 'var(--shadow-xs)',
             display: 'flex',
             flexWrap: 'wrap',
             justifyContent: 'space-between',
             alignItems: 'center',
-            gap: '20px'
+            gap: '16px'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -195,7 +195,7 @@ export default function DashboardPage() {
               <div 
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
                   gap: '24px'
                 }}
               >

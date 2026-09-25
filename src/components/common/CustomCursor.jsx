@@ -308,6 +308,8 @@ export default function CustomCursor() {
     }
   }
 
+  if (!isSupported) return null;
+
   return (
     <div
       ref={cursorRef}

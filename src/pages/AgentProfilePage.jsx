@@ -42,7 +42,7 @@ export default function AgentProfilePage() {
             background: '#FFFFFF',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border-color)',
-            padding: '36px',
+            padding: 'clamp(18px, 4vw, 36px)',
             marginBottom: '40px',
             boxShadow: 'var(--shadow-xs)'
           }}
@@ -147,7 +147,7 @@ export default function AgentProfilePage() {
           <div 
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))',
               gap: '24px'
             }}
           >

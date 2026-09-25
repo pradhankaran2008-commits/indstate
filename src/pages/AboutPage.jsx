@@ -32,9 +32,9 @@ export default function AboutPage() {
             boxShadow: 'var(--shadow-sm)'
           }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', alignItems: 'center' }}>
-            <div style={{ padding: '40px' }}>
-              <h2 style={{ fontSize: '26px', color: 'var(--primary)', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', alignItems: 'center' }}>
+            <div style={{ padding: 'clamp(20px, 5vw, 40px)' }}>
+              <h2 style={{ fontSize: 'clamp(20px, 4vw, 26px)', color: 'var(--primary)', marginBottom: '16px' }}>
                 Transforming Indian Real Estate Since 2021
               </h2>
               <p style={{ fontSize: '15px', color: 'var(--text-body)', lineHeight: 1.8, marginBottom: '16px' }}>
@@ -44,7 +44,7 @@ export default function AboutPage() {
                 INDSTATE was founded with a singular mission: to make home buying in India as transparent, predictable, and joyous as it ought to be. By strictly enforcing RERA compliance, carpet area calculations, and providing direct Zero-Brokerage owner connectivity, we have helped over 50,000 Indian families move into verified homes.
               </p>
 
-              <div style={{ display: 'flex', gap: '20px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
                 <div>
                   <strong style={{ fontSize: '24px', color: 'var(--saffron)', display: 'block' }}>28 + 8</strong>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>States & UTs Covered</span>

@@ -40,7 +40,7 @@ export default function CalculatorPage() {
             background: '#FFFFFF',
             borderRadius: 'var(--radius-lg)',
             border: '1px solid var(--border-color)',
-            padding: '36px',
+            padding: 'clamp(16px, 4vw, 36px)',
             boxShadow: 'var(--shadow-sm)',
             marginBottom: '40px'
           }}
@@ -48,8 +48,8 @@ export default function CalculatorPage() {
           <div 
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-              gap: '40px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+              gap: 'clamp(20px, 4vw, 40px)',
               alignItems: 'center'
             }}
           >
@@ -172,7 +172,7 @@ export default function CalculatorPage() {
               style={{
                 background: 'var(--bg-alt)',
                 borderRadius: 'var(--radius-lg)',
-                padding: '36px',
+                padding: 'clamp(18px, 4vw, 36px)',
                 border: '1.5px solid var(--border-color)',
                 textAlign: 'center'
               }}
@@ -183,10 +183,11 @@ export default function CalculatorPage() {
               <div 
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: '44px',
+                  fontSize: 'clamp(28px, 6vw, 44px)',
                   fontWeight: 800,
                   color: 'var(--primary)',
-                  margin: '10px 0 20px 0'
+                  margin: '10px 0 20px 0',
+                  wordBreak: 'break-word'
                 }}
               >
                 {formatFullINR(emiData.monthlyEMI)}
